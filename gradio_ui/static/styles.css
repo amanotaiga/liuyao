@@ -1,0 +1,668 @@
+/* Base Typography */
+body {
+    font-family: 'Microsoft YaHei', '微软雅黑', 'SimSun', '宋体', sans-serif;
+    color: #000000;
+    background-color: #ffffff;
+}
+
+/* Main Container */
+.main-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Hexagram Line Styling */
+.hexagram-line {
+    font-family: 'SimSun', '宋体', monospace;
+    transition: all 0.3s ease;
+}
+.hexagram-line:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+}
+.hexagram-line.yang {
+    color: #d32f2f;
+}
+.hexagram-line.yin {
+    color: #2e7d32;
+}
+.hexagram-line.changing {
+    font-weight: 600;
+}
+.hexagram-line-container {
+    margin: 4px 0;
+}
+
+/* Gan-Zhi Button Styling */
+.ganzhi-button {
+    min-width: 50px !important;
+    font-family: 'SimSun', '宋体', monospace;
+    font-size: 16px;
+    padding: 10px 14px;
+    margin: 3px;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+    background-color: #ffffff;
+    border: 2px solid #000000;
+    color: #000000;
+    font-weight: 600;
+}
+.ganzhi-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+    border-color: #000000;
+    background-color: #f0f0f0;
+}
+.ganzhi-button:active,
+.ganzhi-button.clicked {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: #000000 !important;
+    transform: translateY(0px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+}
+.ganzhi-button.clicked {
+    animation: buttonClick 0.3s ease;
+}
+@keyframes buttonClick {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+/* Yao Line Button Styling - Match 變卦 styling */
+.yao-line-button {
+    font-family: 'SimSun', '宋体', monospace;
+    font-size: 26px;
+    font-weight: 400;
+    padding: 20px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    min-height: 70px;
+    text-align: center;
+    width: 100%;
+    max-width: 350px;
+    margin: 4px 0;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+/* Container for 本卦 buttons - align to right */
+.hexagram-display-row .column-spacing:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.hexagram-display-row .column-spacing:first-child > * {
+    width: 100%;
+    max-width: 350px;
+}
+/* Yang line buttons (red) - use multiple selectors for robustness */
+button.yao-line-button.yang-button,
+.yao-line-button.yang-button,
+button.yang-button.yao-line-button {
+    background-color: #ef4444 !important;
+    border: 1.5px solid #b71c1c !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(183, 28, 28, 0.4) !important;
+}
+/* Yin line buttons (green) */
+button.yao-line-button.yin-button,
+.yao-line-button.yin-button,
+button.yin-button.yao-line-button {
+    background-color: #75cc0d !important;
+    border: 1.5px solid #1b5e20 !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(27, 94, 32, 0.4) !important;
+}
+/* Changing yang line buttons */
+button.yao-line-button.yang-button.changing,
+.yao-line-button.yang-button.changing,
+button.yang-button.yao-line-button.changing {
+    background-color: #e96a6a !important;
+    border: 1.5px solid #d32f2f !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(211, 47, 47, 0.5) !important;
+    font-weight: 600 !important;
+}
+/* Changing yin line buttons */
+button.yao-line-button.yin-button.changing,
+.yao-line-button.yin-button.changing,
+button.yin-button.yao-line-button.changing {
+    background-color: #64db68 !important;
+    border: 1.5px solid #2e7d32 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(46, 125, 50, 0.5) !important;
+    font-weight: 600 !important;
+}
+
+/* Ensure all text inside buttons is white */
+button.yao-line-button *,
+.yao-line-button * {
+    color: #ffffff !important;
+}
+.yao-line-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+}
+
+/* Changing Button Styling */
+.yao-button-changing {
+    font-family: 'SimSun', '宋体', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    padding: 14px 26px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    min-height: 50px;
+    background-color: #ffffff;
+    border: 1.5px solid #dee2e6;
+}
+.yao-button-changing:hover {
+    background-color: #fff8f0 !important;
+    border-color: #d4a574 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.2);
+}
+
+/* Line Preview */
+.line-preview {
+    font-family: 'SimSun', '宋体', monospace;
+    font-size: 24px;
+    padding: 12px;
+    text-align: center;
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+/* Result Table */
+.result-table {
+    font-family: 'SimSun', '宋体', monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    white-space: pre;
+    background-color: #ffffff;
+    border: 2px solid #000000;
+    border-radius: 8px;
+    padding: 20px;
+    color: #000000;
+}
+
+/* Tab Styling */
+.tab-nav {
+    border-bottom: 2px solid #e9ecef;
+}
+.tab-nav button {
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.2s ease;
+}
+.tab-nav button:hover {
+    color: #495057;
+}
+.tab-nav button.selected {
+    color: #212529;
+    border-bottom: 2px solid #212529;
+}
+
+/* Input Styling */
+input[type="text"], input[type="number"], select, textarea {
+    border: 2px solid #000000;
+    border-radius: 8px;
+    padding: 10px 14px;
+    transition: all 0.2s ease;
+    background-color: #ffffff;
+    color: #000000;
+}
+input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+    border-color: #000000;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2);
+    outline: none;
+}
+
+/* Dropdown Styling */
+select {
+    background-color: #ffffff;
+    color: #000000;
+    font-weight: 500;
+}
+
+/* Checkbox Styling */
+input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #000000;
+    cursor: pointer;
+}
+label {
+    color: #000000;
+    font-weight: 500;
+}
+
+/* Changing Yao Checkbox Styling - Large Rectangular */
+.changing-yao-checkbox {
+    width: 100% !important;
+    min-width: 300px !important;
+}
+.changing-yao-checkbox > div,
+.changing-yao-checkbox > label,
+.changing-yao-checkbox label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-height: 64px !important;
+    padding: 14px 20px !important;
+    margin: 0 !important;
+    border: 2px solid #000000 !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
+    cursor: pointer !important;
+    font-size: 26px !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    gap: 12px !important;
+    overflow: visible !important;
+}
+.changing-yao-checkbox > div:hover,
+.changing-yao-checkbox > label:hover,
+.changing-yao-checkbox label:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+    border-color: #000000 !important;
+    background: #f0f0f0 !important;
+}
+.changing-yao-checkbox input[type="checkbox"] {
+    width: 28px !important;
+    height: 28px !important;
+    cursor: pointer !important;
+    accent-color: #000000 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+}
+.changing-yao-checkbox input[type="checkbox"]:checked ~ span,
+.changing-yao-checkbox:has(input[type="checkbox"]:checked) > div,
+.changing-yao-checkbox:has(input[type="checkbox"]:checked) > label,
+.changing-yao-checkbox:has(input[type="checkbox"]:checked) label {
+    background: #fff8f0 !important;
+    border-color: #d4a574 !important;
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.25) !important;
+}
+
+/* Button Styling */
+button.primary {
+    background-color: #000000;
+    color: #ffffff;
+    border: 2px solid #000000;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+button.primary:hover {
+    background-color: #333333;
+    border-color: #333333;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+}
+button.secondary {
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+button.secondary:hover {
+    background-color: #f0f0f0;
+    border-color: #000000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Markdown Headers */
+h1, h2, h3, h4 {
+    color: #000000;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+.main-title {
+    margin-bottom: 12px;
+}
+h2 {
+    font-size: 22px;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #000000;
+    font-weight: 700;
+}
+.section-header {
+    margin-bottom: 12px;
+}
+
+/* Section Spacing */
+.section-divider {
+    margin: 32px 0;
+    border-top: 2px solid #000000;
+    border-bottom: none;
+}
+
+/* Hexagram Display Row */
+.hexagram-display-row {
+    margin-top: 8px;
+    gap: 20px;
+}
+
+/* Card-like Containers */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Column Spacing */
+.column-spacing {
+    padding: 0 12px;
+}
+
+/* Refined Text Colors */
+.text-muted {
+    color: #333333;
+    line-height: 1.6 !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    font-weight: 500 !important;
+}
+.text-primary {
+    color: #000000;
+    font-weight: 600;
+}
+
+/* Smooth Transitions */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+    /* Base Typography - Dark Theme */
+    body {
+        color: #ffffff;
+        background-color: #000000;
+    }
+    
+    /* Main Container - Dark Theme */
+    .main-container {
+        background-color: #1a1d20;
+    }
+    
+    /* Hexagram Line Styling - Dark Theme */
+    .hexagram-line:hover {
+        box-shadow: 0 4px 12px rgba(255,255,255,0.3) !important;
+    }
+    .hexagram-line.yang {
+        color: #ff4444;
+    }
+    .hexagram-line.yin {
+        color: #00ff00;
+    }
+    
+    /* Gan-Zhi Button Styling - Dark Theme */
+    .ganzhi-button {
+        background-color: #1a1a1a;
+        border: 2px solid #ffffff;
+        color: #ffffff;
+        font-weight: 700;
+    }
+    .ganzhi-button:hover {
+        box-shadow: 0 4px 8px rgba(255,255,255,0.3);
+        border-color: #ffffff;
+        background-color: #333333;
+    }
+    .ganzhi-button:active,
+    .ganzhi-button.clicked {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border-color: #ffffff !important;
+        transform: translateY(0px);
+        box-shadow: 0 2px 4px rgba(255,255,255,0.4) !important;
+    }
+    
+    /* Yao Line Button Styling - Dark Theme */
+    .yao-line-button {
+        background-color: #2d3339;
+        border: 1.5px solid #495057;
+        color: #e9ecef;
+    }
+    .yao-line-button:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        border-color: #6c757d;
+    }
+    
+    /* Changing Button Styling - Dark Theme */
+    .yao-button-changing {
+        background-color: #2d3339;
+        border: 1.5px solid #495057;
+    }
+    .yao-button-changing:hover {
+        background-color: #3d2f1f !important;
+        border-color: #d4a574 !important;
+        box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+    }
+    
+    /* Line Preview - Dark Theme */
+    .line-preview {
+        background-color: #2d3339;
+        border: 1px solid #495057;
+        color: #e9ecef;
+    }
+    
+    /* Result Table - Dark Theme */
+    .result-table {
+        background-color: #000000;
+        border: 2px solid #ffffff;
+        color: #ffffff;
+    }
+    
+    /* Tab Styling - Dark Theme */
+    .tab-nav {
+        border-bottom: 2px solid #ffffff;
+    }
+    .tab-nav button {
+        color: #cccccc;
+        font-weight: 600;
+    }
+    .tab-nav button:hover {
+        color: #ffffff;
+    }
+    .tab-nav button.selected {
+        color: #ffffff;
+        border-bottom: 3px solid #ffffff;
+        font-weight: 800;
+    }
+    
+    /* Input Styling - Dark Theme */
+    input[type="text"], input[type="number"], select, textarea {
+        border: 2px solid #ffffff;
+        background-color: #000000;
+        color: #ffffff;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+        border-color: #ffffff;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Dropdown Styling - Dark Theme */
+    select {
+        background-color: #000000;
+        color: #ffffff;
+        font-weight: 600;
+    }
+    
+    /* Checkbox Styling - Dark Theme */
+    input[type="checkbox"] {
+        accent-color: #ffffff;
+    }
+    label {
+        color: #ffffff;
+        font-weight: 600;
+    }
+    
+    /* Changing Yao Checkbox - Dark Theme */
+    .changing-yao-checkbox > div,
+    .changing-yao-checkbox > label,
+    .changing-yao-checkbox label {
+        border: 2px solid #ffffff !important;
+        background: #000000 !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 4px rgba(255,255,255,0.2) !important;
+        font-weight: 700 !important;
+    }
+    .changing-yao-checkbox > div:hover,
+    .changing-yao-checkbox > label:hover,
+    .changing-yao-checkbox label:hover {
+        box-shadow: 0 4px 12px rgba(255,255,255,0.3) !important;
+        border-color: #ffffff !important;
+        background: #1a1a1a !important;
+    }
+    .changing-yao-checkbox input[type="checkbox"]:checked ~ span,
+    .changing-yao-checkbox:has(input[type="checkbox"]:checked) > div,
+    .changing-yao-checkbox:has(input[type="checkbox"]:checked) > label,
+    .changing-yao-checkbox:has(input[type="checkbox"]:checked) label {
+        background: #2a1f0f !important;
+        border-color: #ffaa00 !important;
+        box-shadow: 0 2px 6px rgba(255, 170, 0, 0.5) !important;
+    }
+    .changing-yao-checkbox input[type="checkbox"] {
+        accent-color: #ffffff !important;
+    }
+    
+    /* Button Styling - Dark Theme */
+    button.primary {
+        background-color: #ffffff;
+        color: #000000;
+        border: 2px solid #ffffff;
+        font-weight: 800;
+        box-shadow: 0 4px 8px rgba(255,255,255,0.3);
+    }
+    button.primary:hover {
+        background-color: #cccccc;
+        border-color: #cccccc;
+        box-shadow: 0 6px 12px rgba(255,255,255,0.4);
+    }
+    button.secondary {
+        background-color: #000000;
+        color: #ffffff;
+        border: 2px solid #ffffff;
+        font-weight: 800;
+    }
+    button.secondary:hover {
+        background-color: #1a1a1a;
+        border-color: #ffffff;
+        box-shadow: 0 4px 8px rgba(255,255,255,0.2);
+    }
+    
+    /* Markdown Headers - Dark Theme */
+    h1, h2, h3, h4 {
+        color: #ffffff;
+        font-weight: 800;
+    }
+    h3 {
+        color: #ffffff;
+        font-weight: 800;
+    }
+    
+    /* Section Divider - Dark Theme */
+    .section-divider {
+        border-top: 2px solid #ffffff;
+    }
+    
+    /* Card-like Containers - Dark Theme */
+    .card {
+        background-color: #2d3339;
+        border: 1px solid #495057;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    /* Refined Text Colors - Dark Theme */
+    .text-muted {
+        color: #cccccc;
+        line-height: 1.6 !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        font-weight: 600 !important;
+    }
+    .text-primary {
+        color: #ffffff;
+        font-weight: 700;
+    }
+    
+    /* Hexagram Container - Dark Theme */
+    .hexagram-container {
+        background-color: #000000 !important;
+        border: 2px solid #ffffff !important;
+        box-shadow: 0 4px 12px rgba(255,255,255,0.3), 0 2px 6px rgba(255,255,255,0.2) !important;
+    }
+    .hexagram-title {
+        color: #ffffff !important;
+        font-weight: 800 !important;
+    }
+    .hexagram-footer {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Hexagram Line Backgrounds - Dark Theme */
+    .hexagram-line {
+        /* Note: Inline styles will override, but we adjust what we can */
+    }
+    .hexagram-line.yang {
+        /* Slightly brighter red for dark theme visibility */
+    }
+    .hexagram-line.yin {
+        /* Slightly brighter green for dark theme visibility */
+    }
+    /* Override hexagram line label colors in dark theme */
+    .hexagram-line span {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Gradio Component Overrides - Dark Theme */
+    .gradio-container {
+        background-color: #1a1d20 !important;
+    }
+    
+    /* Textbox and Input Overrides - Dark Theme */
+    .gradio-textbox, .gradio-dropdown, .gradio-checkbox {
+        background-color: #2d3339 !important;
+        border-color: #495057 !important;
+        color: #e9ecef !important;
+    }
+}
+</style>
