@@ -13,7 +13,7 @@ from .utils.static_loader import load_static_assets
 from .components.date_inputs import create_date_inputs
 from .components.hexagram_inputs import create_hexagram_inputs
 from .components.result_display import create_result_display
-from .handlers.divination_handlers import process_divination
+from .handlers.divination_handlers import process_divination, process_divination_for_ui
 from .handlers.hexagram_handlers import get_hexagram_code_from_state_or_dropdown
 
 
@@ -39,7 +39,8 @@ def create_process_regular_tab_handler(
         active_date_tab,
         hexagram_dropdown_value, hexagram_code_state,
         yao1_changing, yao2_changing, yao3_changing,
-        yao4_changing, yao5_changing, yao6_changing
+        yao4_changing, yao5_changing, yao6_changing,
+        compact_view
     ):
         """Process divination for regular tab (name search method)"""
         # Determine which date method to use based on active tab
@@ -72,7 +73,7 @@ def create_process_regular_tab_handler(
         changing_5 = bool(checkbox_values[4]) if checkbox_values[4] is not None else False
         changing_6 = bool(checkbox_values[5]) if checkbox_values[5] is not None else False
         
-        return process_divination(
+        with_prompt, without_prompt = process_divination_for_ui(
             use_western,
             year, month, day, hour,
             year_pillar_str, "", month_pillar_str, "",
@@ -81,8 +82,11 @@ def create_process_regular_tab_handler(
             "陽", False, "陽", False, "陽", False,
             "陽", False, "陽", False, "陽", False,
             "", code,
-            changing_1, changing_2, changing_3, changing_4, changing_5, changing_6
+            changing_1, changing_2, changing_3, changing_4, changing_5, changing_6,
+            is_mobile=bool(compact_view)
         )
+        # Return with_prompt for display, without_prompt for copy
+        return with_prompt, without_prompt
     
     return process_regular_tab
 
@@ -109,7 +113,8 @@ def create_process_clickable_tab_handler(
         active_date_tab,
         clickable_hexagram_code,
         clickable_yao1_changing, clickable_yao2_changing, clickable_yao3_changing,
-        clickable_yao4_changing, clickable_yao5_changing, clickable_yao6_changing
+        clickable_yao4_changing, clickable_yao5_changing, clickable_yao6_changing,
+        compact_view
     ):
         """Process divination for clickable tab"""
         # Determine which date method to use based on active tab
@@ -134,7 +139,7 @@ def create_process_clickable_tab_handler(
         changing_5 = bool(clickable_yao5_changing) if clickable_yao5_changing is not None else False
         changing_6 = bool(clickable_yao6_changing) if clickable_yao6_changing is not None else False
         
-        return process_divination(
+        with_prompt, without_prompt = process_divination_for_ui(
             use_western,
             year, month, day, hour,
             year_pillar_str, "", month_pillar_str, "",
@@ -143,8 +148,11 @@ def create_process_clickable_tab_handler(
             "陽", False, "陽", False, "陽", False,
             "陽", False, "陽", False, "陽", False,
             "", code,
-            changing_1, changing_2, changing_3, changing_4, changing_5, changing_6
+            changing_1, changing_2, changing_3, changing_4, changing_5, changing_6,
+            is_mobile=bool(compact_view)
         )
+        # Return with_prompt for display, without_prompt for copy
+        return with_prompt, without_prompt
     
     return process_clickable_tab
 
@@ -168,7 +176,7 @@ def create_ui():
         # Title and description
         gr.Markdown("# 六爻排盤系統", elem_classes=["main-title"])
         gr.Markdown(
-            "<p style='color: #868e96; font-size: 14px; margin-top: -8px; margin-bottom: 24px;'>輸入日期和卦象信息，進行六爻排盤</p>",
+            "<p style='color: #868e96; font-size: 14px; margin-top: -6px; margin-bottom: 16px;'>輸入日期和卦象信息，進行六爻排盤</p>",
             elem_classes=["text-muted"]
         )
         gr.Markdown("---", elem_classes=["section-divider"])
@@ -216,8 +224,9 @@ def create_ui():
                 hexagram_inputs.name_search.changing_checkboxes[3],  # 3爻
                 hexagram_inputs.name_search.changing_checkboxes[4],  # 2爻
                 hexagram_inputs.name_search.changing_checkboxes[5],  # 1爻
+                hexagram_inputs.name_search.compact_view_checkbox,
             ],
-            outputs=[result_display.result_table]
+            outputs=[result_display.result_table, result_display.result_table_without_prompt]
         )
         
         # Clickable tab button
@@ -246,8 +255,9 @@ def create_ui():
                 hexagram_inputs.clickable.clickable_changing_state_vars[3],  # 4爻
                 hexagram_inputs.clickable.clickable_changing_state_vars[4],  # 5爻
                 hexagram_inputs.clickable.clickable_changing_state_vars[5],  # 6爻
+                hexagram_inputs.clickable.compact_view_checkbox,
             ],
-            outputs=[result_display.result_table]
+            outputs=[result_display.result_table, result_display.result_table_without_prompt]
         )
     
     return demo

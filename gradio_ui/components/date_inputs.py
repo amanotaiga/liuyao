@@ -18,10 +18,10 @@ from ..config import HEAVENLY_STEMS, EARTHLY_BRANCHES, MIN_YEAR, MAX_YEAR, PILLA
 @dataclass
 class WesternDateInputs:
     """Components for Western calendar date input"""
-    year_dropdown: gr.Dropdown
-    month_dropdown: gr.Dropdown
-    day_dropdown: gr.Dropdown
-    hour_dropdown: gr.Dropdown
+    year_dropdown: gr.Number
+    month_dropdown: gr.Number
+    day_dropdown: gr.Number
+    hour_dropdown: gr.Number
     use_western_date: gr.State
 
 
@@ -33,8 +33,6 @@ class GanzhiDateInputs:
     month_display: gr.Textbox
     day_display: gr.Textbox
     hour_display: gr.Textbox
-    current_selection: gr.Textbox
-    current_pillar_label: gr.Markdown
     
     # State components
     pillar_index_state: gr.State
@@ -66,39 +64,75 @@ def create_western_calendar_tab(active_tab_state: gr.State) -> Tuple[WesternDate
         Tuple of (WesternDateInputs, setup_handlers function)
     """
     gr.Markdown(
-        "<p style='color: #868e96; font-size: 13px; margin-bottom: 20px;'>選擇西曆日期和時間進行排盤</p>",
+        "<p style='color: #868e96; font-size: 13px; margin-bottom: 12px;'>選擇起掛當下的日期時間進行排盤，分鐘位數不作使用，可以隨意填寫</p>",
         elem_classes=["text-muted"]
     )
     
     # Get current date/time
     now = datetime.now()
     
-    with gr.Row():
-        year_dropdown = gr.Dropdown(
-            choices=list(range(MIN_YEAR, MAX_YEAR + 1)),
+    # Format date and time for HTML5 inputs
+    date_str = now.strftime("%Y-%m-%d")
+    time_str = now.strftime("%H:00")
+    
+    # Mobile-friendly HTML5 date and time inputs (shown on mobile, hidden on desktop)
+    mobile_date_time_html = gr.HTML(
+        value=f"""
+        <div class="mobile-date-time-wrapper">
+            <div class="mobile-date-time-inputs">
+                <div style="margin-bottom: 12px;">
+                    <label for="mobile-date-input" style="display: block; margin-bottom: 6px; font-weight: 500; color: var(--body-text-color, #333);">日期</label>
+                    <input type="date" id="mobile-date-input" value="{date_str}" 
+                           style="width: 100%; padding: 12px 14px; font-size: 16px; border: 1.5px solid var(--border-color, #ddd); border-radius: 8px; box-sizing: border-box; background: var(--input-background, #fff); color: var(--input-text-color, #333);" />
+                </div>
+                <div>
+                    <label for="mobile-time-input" style="display: block; margin-bottom: 6px; font-weight: 500; color: var(--body-text-color, #333);">時間</label>
+                    <input type="time" id="mobile-time-input" value="{time_str}" 
+                           style="width: 100%; padding: 12px 14px; font-size: 16px; border: 1.5px solid var(--border-color, #ddd); border-radius: 8px; box-sizing: border-box; background: var(--input-background, #fff); color: var(--input-text-color, #333);" />
+                </div>
+            </div>
+        </div>
+        """,
+        elem_classes=["mobile-date-time-wrapper"]
+    )
+    
+    # Desktop number inputs (shown on desktop, hidden on mobile)
+    with gr.Row(elem_classes=["desktop-date-inputs"]):
+        year_dropdown = gr.Number(
             value=now.year,
             label="年",
+            step=1,
+            precision=0,
             interactive=True,
             container=True
         )
-        month_dropdown = gr.Dropdown(
-            choices=list(range(1, 13)),
+        month_dropdown = gr.Number(
             value=now.month,
             label="月",
+            minimum=1,
+            maximum=12,
+            step=1,
+            precision=0,
             interactive=True,
             container=True
         )
-        day_dropdown = gr.Dropdown(
-            choices=list(range(1, 32)),
+        day_dropdown = gr.Number(
             value=now.day,
             label="日",
+            minimum=1,
+            maximum=31,
+            step=1,
+            precision=0,
             interactive=True,
             container=True
         )
-        hour_dropdown = gr.Dropdown(
-            choices=list(range(0, 24)),
+        hour_dropdown = gr.Number(
             value=now.hour,
             label="時",
+            minimum=0,
+            maximum=23,
+            step=1,
+            precision=0,
             interactive=True,
             container=True
         )
@@ -107,10 +141,53 @@ def create_western_calendar_tab(active_tab_state: gr.State) -> Tuple[WesternDate
     
     # Setup handlers to track when Western date tab is used
     def setup_handlers():
-        """Set up handlers to track active date tab"""
+        """Set up handlers to track active date tab and sync mobile/desktop inputs"""
         def mark_western_active(*args):
             """Mark Western date tab as active when any input changes"""
             return "western"
+        
+        def sync_from_numbers(year, month, day, hour):
+            """Sync HTML5 inputs when number inputs change"""
+            try:
+                date_str = f"{int(year)}-{int(month):02d}-{int(day):02d}"
+                time_str = f"{int(hour):02d}:00"
+                return f"""
+                <div class="mobile-date-time-wrapper">
+                    <div class="mobile-date-time-inputs">
+                        <div style="margin-bottom: 12px;">
+                            <label for="mobile-date-input" style="display: block; margin-bottom: 6px; font-weight: 500; color: var(--body-text-color, #333);">日期</label>
+                            <input type="date" id="mobile-date-input" value="{date_str}" 
+                                   style="width: 100%; padding: 12px 14px; font-size: 16px; border: 1.5px solid var(--border-color, #ddd); border-radius: 8px; box-sizing: border-box; background: var(--input-background, #fff); color: var(--input-text-color, #333);" />
+                        </div>
+                        <div>
+                            <label for="mobile-time-input" style="display: block; margin-bottom: 6px; font-weight: 500; color: var(--body-text-color, #333);">時間</label>
+                            <input type="time" id="mobile-time-input" value="{time_str}" 
+                                   style="width: 100%; padding: 12px 14px; font-size: 16px; border: 1.5px solid var(--border-color, #ddd); border-radius: 8px; box-sizing: border-box; background: var(--input-background, #fff); color: var(--input-text-color, #333);" />
+                        </div>
+                    </div>
+                </div>
+                """
+            except Exception:
+                # Return current date/time on error
+                now = datetime.now()
+                date_str = now.strftime("%Y-%m-%d")
+                time_str = now.strftime("%H:00")
+                return f"""
+                <div class="mobile-date-time-wrapper">
+                    <div class="mobile-date-time-inputs">
+                        <div style="margin-bottom: 12px;">
+                            <label for="mobile-date-input" style="display: block; margin-bottom: 6px; font-weight: 500; color: var(--body-text-color, #333);">日期</label>
+                            <input type="date" id="mobile-date-input" value="{date_str}" 
+                                   style="width: 100%; padding: 12px 14px; font-size: 16px; border: 1.5px solid var(--border-color, #ddd); border-radius: 8px; box-sizing: border-box; background: var(--input-background, #fff); color: var(--input-text-color, #333);" />
+                        </div>
+                        <div>
+                            <label for="mobile-time-input" style="display: block; margin-bottom: 6px; font-weight: 500; color: var(--body-text-color, #333);">時間</label>
+                            <input type="time" id="mobile-time-input" value="{time_str}" 
+                                   style="width: 100%; padding: 12px 14px; font-size: 16px; border: 1.5px solid var(--border-color, #ddd); border-radius: 8px; box-sizing: border-box; background: var(--input-background, #fff); color: var(--input-text-color, #333);" />
+                        </div>
+                    </div>
+                </div>
+                """
         
         # Track when any Western date input changes
         for input_component in [year_dropdown, month_dropdown, day_dropdown, hour_dropdown]:
@@ -119,6 +196,28 @@ def create_western_calendar_tab(active_tab_state: gr.State) -> Tuple[WesternDate
                 inputs=[input_component],
                 outputs=[active_tab_state]
             )
+        
+        # Sync HTML5 inputs when number inputs change
+        year_dropdown.change(
+            fn=sync_from_numbers,
+            inputs=[year_dropdown, month_dropdown, day_dropdown, hour_dropdown],
+            outputs=[mobile_date_time_html]
+        )
+        month_dropdown.change(
+            fn=sync_from_numbers,
+            inputs=[year_dropdown, month_dropdown, day_dropdown, hour_dropdown],
+            outputs=[mobile_date_time_html]
+        )
+        day_dropdown.change(
+            fn=sync_from_numbers,
+            inputs=[year_dropdown, month_dropdown, day_dropdown, hour_dropdown],
+            outputs=[mobile_date_time_html]
+        )
+        hour_dropdown.change(
+            fn=sync_from_numbers,
+            inputs=[year_dropdown, month_dropdown, day_dropdown, hour_dropdown],
+            outputs=[mobile_date_time_html]
+        )
     
     western_inputs = WesternDateInputs(
         year_dropdown=year_dropdown,
@@ -143,7 +242,7 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
         The setup_handlers function should be called to wire up event handlers
     """
     gr.Markdown(
-        "<p style='color: #868e96; font-size: 13px; margin-bottom: 20px;'>依次選擇天干和地支組成四柱（年柱、月柱、日柱、時柱）</p>",
+        "<p style='color: #868e96; font-size: 13px; margin-bottom: 12px;'>依次選擇天干和地支組成四柱（年柱、月柱、日柱、時柱）</p>",
         elem_classes=["text-muted"]
     )
     
@@ -152,67 +251,70 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
         with gr.Column(scale=1, elem_classes=["column-spacing"]):
             # 天干 (Heavenly Stems) section
             gr.Markdown("### 天干", elem_classes=["section-header"])
-            gr.Markdown(
-                "<p style='color: #868e96; font-size: 12px; margin-top: -8px; margin-bottom: 12px;'>點擊選擇天干</p>",
-                elem_classes=["text-muted"]
-            )
-            
+
             # Create 10 天干 buttons in a grid (2 rows × 5 columns)
+            # Row 1: 甲, 丙, 戊, 庚, 壬 (even indices: 0, 2, 4, 6, 8)
+            # Row 2: 乙, 丁, 己, 辛, 癸 (odd indices: 1, 3, 5, 7, 9)
             stem_buttons = []
             with gr.Column():
-                for i in range(0, 10, 5):
-                    with gr.Row():
-                        for j in range(5):
-                            if i + j < 10:
-                                stem = HEAVENLY_STEMS[i + j]
-                                btn = gr.Button(
-                                    stem,
-                                    size="lg",
-                                    min_width=60,
-                                    elem_classes=["ganzhi-button"]
-                                )
-                                stem_buttons.append((i + j, btn))
+                # First row: even indices
+                with gr.Row(elem_classes=["tiangan-button-row"]):
+                    for idx in [0, 2, 4, 6, 8]:
+                        stem = HEAVENLY_STEMS[idx]
+                        btn = gr.Button(
+                            stem,
+                            size="lg",
+                            elem_classes=["ganzhi-button"]
+                        )
+                        stem_buttons.append((idx, btn))
+                # Second row: odd indices
+                with gr.Row(elem_classes=["tiangan-button-row"]):
+                    for idx in [1, 3, 5, 7, 9]:
+                        stem = HEAVENLY_STEMS[idx]
+                        btn = gr.Button(
+                            stem,
+                            size="lg",
+                            elem_classes=["ganzhi-button"]
+                        )
+                        stem_buttons.append((idx, btn))
             
             gr.Markdown("---", elem_classes=["section-divider"])
             
             # 地支 (Earthly Branches) section
             gr.Markdown("### 地支", elem_classes=["section-header"])
-            gr.Markdown(
-                "<p style='color: #868e96; font-size: 12px; margin-top: -8px; margin-bottom: 12px;'>點擊選擇地支</p>",
-                elem_classes=["text-muted"]
-            )
             
-            # Create 12 地支 buttons in a grid (3 rows × 4 columns)
+            # Create 12 地支 buttons in a grid (2 rows × 6 columns)
+            # Row 1: 子, 寅, 辰, 午, 申, 戌 (even indices: 0, 2, 4, 6, 8, 10)
+            # Row 2: 丑, 卯, 巳, 未, 酉, 亥 (odd indices: 1, 3, 5, 7, 9, 11)
             branch_buttons = []
             with gr.Column():
-                for i in range(0, 12, 4):
-                    with gr.Row():
-                        for j in range(4):
-                            if i + j < 12:
-                                branch = EARTHLY_BRANCHES[i + j]
-                                btn = gr.Button(
-                                    branch,
-                                    size="lg",
-                                    min_width=60,
-                                    elem_classes=["ganzhi-button"]
-                                )
-                                branch_buttons.append((i + j, btn))
+                # First row: even indices
+                with gr.Row(elem_classes=["dizhi-button-row"]):
+                    for idx in [0, 2, 4, 6, 8, 10]:
+                        branch = EARTHLY_BRANCHES[idx]
+                        btn = gr.Button(
+                            branch,
+                            size="lg",
+                            elem_classes=["ganzhi-button"]
+                        )
+                        branch_buttons.append((idx, btn))
+                # Second row: odd indices
+                with gr.Row(elem_classes=["dizhi-button-row"]):
+                    for idx in [1, 3, 5, 7, 9, 11]:
+                        branch = EARTHLY_BRANCHES[idx]
+                        btn = gr.Button(
+                            branch,
+                            size="lg",
+                            elem_classes=["ganzhi-button"]
+                        )
+                        branch_buttons.append((idx, btn))
         
         # Right panel: Display selected pillars
         with gr.Column(scale=1, elem_classes=["column-spacing"]):
-            current_pillar_label = gr.Markdown("### 當前選擇：年柱", elem_classes=["section-header"])
-            current_selection = gr.Textbox(
-                label="當前選擇",
-                value="",
-                interactive=False,
-                container=True
-            )
-            
-            gr.Markdown("---", elem_classes=["section-divider"])
-            
+                        
             gr.Markdown("### 已選擇的四柱", elem_classes=["section-header"])
             
-            # Display pillars horizontally
+            # Display pillars horizontally in a single row
             with gr.Row():
                 year_display = gr.Textbox(
                     label="年柱",
@@ -263,11 +365,15 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
         else:
             selection_text = f"{new_stem}[待選地支]"
         
+        # Update the current pillar display with selection text
+        display_updates = [year, month, day, hour]
+        display_updates[current_index] = selection_text
+        
         return (
             new_stem,  # current_stem_state
             current_branch,  # current_branch_state
-            selection_text,  # current_selection
             year, month, day, hour,  # pillar states (unchanged)
+            *display_updates,  # display updates - show selection in current pillar
             "ganzhi"  # active_tab_state - mark ganzhi as active
         )
     
@@ -278,11 +384,14 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
         if not current_stem:
             # No stem selected yet
             selection_text = f"[待選天干]{new_branch}"
+            # Update the current pillar display with selection text
+            display_updates = [year, month, day, hour]
+            display_updates[current_index] = selection_text
             return (
                 "",  # current_stem_state
                 new_branch,  # current_branch_state
-                selection_text,  # current_selection
                 year, month, day, hour,  # pillar states
+                *display_updates,  # display updates - show selection in current pillar
                 "ganzhi"  # active_tab_state - mark ganzhi as active
             )
         
@@ -304,9 +413,7 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
         return (
             "",  # current_stem_state (reset)
             "",  # current_branch_state (reset)
-            "",  # current_selection (reset)
             next_index,  # pillar_index_state
-            f"### 當前選擇：{PILLAR_LABELS[next_index]}",  # current_pillar_label
             year, month, day, hour,  # pillar states
             year, month, day, hour,  # displays
             "ganzhi"  # active_tab_state - mark ganzhi as active
@@ -318,8 +425,6 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
             0,  # pillar_index_state
             "", # current_stem_state
             "", # current_branch_state
-            "### 當前選擇：年柱",  # current_pillar_label
-            "",  # current_selection
             "", "", "", "",  # pillar states
             "", "", "", "",  # displays
             "western"  # active_tab_state - reset to western when resetting ganzhi
@@ -340,7 +445,7 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
             btn.click(
                 fn=handler,
                 inputs=[pillar_index_state, current_stem_state, current_branch_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, active_tab_state],
-                outputs=[current_stem_state, current_branch_state, current_selection, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, active_tab_state]
+                outputs=[current_stem_state, current_branch_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, year_display, month_display, day_display, hour_display, active_tab_state]
             )
         
         # Wire up 地支 buttons
@@ -356,13 +461,13 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
             btn.click(
                 fn=handler,
                 inputs=[pillar_index_state, current_stem_state, current_branch_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, active_tab_state],
-                outputs=[current_stem_state, current_branch_state, current_selection, pillar_index_state, current_pillar_label, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, year_display, month_display, day_display, hour_display, active_tab_state]
+                outputs=[current_stem_state, current_branch_state, pillar_index_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, year_display, month_display, day_display, hour_display, active_tab_state]
             )
         
         # Wire up reset button
         reset_btn.click(
             fn=reset_pillars,
-            outputs=[pillar_index_state, current_stem_state, current_branch_state, current_pillar_label, current_selection, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, year_display, month_display, day_display, hour_display, active_tab_state]
+            outputs=[pillar_index_state, current_stem_state, current_branch_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, year_display, month_display, day_display, hour_display, active_tab_state]
         )
         
         # Wire up display textboxes to sync with state variables when user types directly
@@ -413,8 +518,6 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
         month_display=month_display,
         day_display=day_display,
         hour_display=hour_display,
-        current_selection=current_selection,
-        current_pillar_label=current_pillar_label,
         pillar_index_state=pillar_index_state,
         current_stem_state=current_stem_state,
         current_branch_state=current_branch_state,

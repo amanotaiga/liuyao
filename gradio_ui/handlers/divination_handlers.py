@@ -18,7 +18,7 @@ from ..utils.validation import (
     validate_hexagram_code
 )
 from ..utils.hexagram_utils import search_hexagram_by_name
-from ..utils.formatting import format_divination_results
+from ..utils.formatting import format_divination_results_pc, format_divination_results_mobile
 
 
 @dataclass
@@ -283,7 +283,7 @@ def get_hexagram_code_from_inputs(request: DivinationRequest) -> Tuple[str, Opti
         return get_hexagram_code_from_name_method(request.name_method)
 
 
-def perform_divination(hexagram_code: str, bazi: BaZi, changing_lines: List[int]) -> Tuple[Optional[str], Optional[Dict[str, Any]], Optional[List[Any]], Optional[str]]:
+def perform_divination(hexagram_code: str, bazi: BaZi, changing_lines: List[int], is_mobile: bool = False) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, Any]], Optional[List[Any]], Optional[str]]:
     """
     Perform the actual divination calculation
     
@@ -291,38 +291,49 @@ def perform_divination(hexagram_code: str, bazi: BaZi, changing_lines: List[int]
         hexagram_code: 6-character hexagram code
         bazi: BaZi object
         changing_lines: List of changing line numbers (1-6)
+        is_mobile: Whether to use mobile-friendly format (default: False)
         
     Returns:
-        Tuple of (formatted_result, result_json, yao_list, error_message)
-        If successful, error_message is None and formatted_result contains the formatted output
-        If failed, formatted_result is None and error_message contains the error
+        Tuple of (formatted_result_with_prompt, formatted_result_without_prompt, result_json, yao_list, error_message)
+        If successful, error_message is None and formatted results contain the formatted output
+        If failed, formatted results are None and error_message contains the error
     """
     # Validate hexagram code
     is_valid, error_msg = validate_hexagram_code(hexagram_code)
     if not is_valid:
-        return None, None, None, error_msg
+        return None, None, None, None, error_msg
     
     # Perform divination
     try:
         yao_list, result_json = six_yao_divination(hexagram_code, bazi, changing_lines)
     except KeyError as e:
-        return None, None, None, ERROR_MESSAGES["missing_hexagram_data"].format(error=str(e))
+        return None, None, None, None, ERROR_MESSAGES["missing_hexagram_data"].format(error=str(e))
     except Exception as e:
-        return None, None, None, ERROR_MESSAGES["divination_error"].format(error=str(e))
+        return None, None, None, None, ERROR_MESSAGES["divination_error"].format(error=str(e))
     
-    # Format results
-    formatted_result = format_divination_results(
-        bazi,
-        result_json,
-        yao_list,
-        show_shen_sha=True,
-        for_gradio=True
-    )
+    # Format results using appropriate format based on is_mobile flag
+    # Both functions now return (with_prompt, without_prompt)
+    if is_mobile:
+        formatted_result_with_prompt, formatted_result_without_prompt = format_divination_results_mobile(
+            bazi,
+            result_json,
+            yao_list,
+            show_shen_sha=True,
+            for_gradio=True
+        )
+    else:
+        formatted_result_with_prompt, formatted_result_without_prompt = format_divination_results_pc(
+            bazi,
+            result_json,
+            yao_list,
+            show_shen_sha=True,
+            for_gradio=True
+        )
     
-    return formatted_result, result_json, yao_list, None
+    return formatted_result_with_prompt, formatted_result_without_prompt, result_json, yao_list, None
 
 
-def process_divination_request(request: DivinationRequest) -> str:
+def process_divination_request(request: DivinationRequest, is_mobile: bool = False) -> str:
     """
     Process a complete divination request
     
@@ -348,11 +359,11 @@ def process_divination_request(request: DivinationRequest) -> str:
             return error
         
         # Step 3: Perform divination
-        result, result_json, yao_list, error = perform_divination(hexagram_code, bazi, changing_lines)
+        result_with_prompt, result_without_prompt, result_json, yao_list, error = perform_divination(hexagram_code, bazi, changing_lines, is_mobile=is_mobile)
         if error:
             return error
         
-        return result
+        return result_with_prompt
         
     except Exception as e:
         return ERROR_MESSAGES["general_error"].format(error=str(e))
@@ -378,7 +389,9 @@ def process_divination(
     hexagram_name_query: str,
     selected_hexagram_code: str,
     name_yao1_changing, name_yao2_changing, name_yao3_changing,
-    name_yao4_changing, name_yao5_changing, name_yao6_changing
+    name_yao4_changing, name_yao5_changing, name_yao6_changing,
+    # Display options
+    is_mobile: bool = False
 ) -> str:
     """
     Main processing function for divination (legacy wrapper)
@@ -390,9 +403,10 @@ def process_divination(
         Formatted text output matching test_liu_yao.py format
     """
     # Build request object from parameters
+    # Convert to int in case Number components return floats
     request = DivinationRequest(
         use_western_date=use_western_date,
-        western_date=WesternDateInput(year=year, month=month, day=day, hour=hour) if use_western_date else None,
+        western_date=WesternDateInput(year=int(year), month=int(month), day=int(day), hour=int(hour)) if use_western_date else None,
         ganzhi_date=GanzhiDateInput(
             year_pillar=year_pillar_str or "",
             month_pillar=month_pillar_str or "",
@@ -428,5 +442,99 @@ def process_divination(
         ) if not use_button_method else None
     )
     
-    return process_divination_request(request)
+    return process_divination_request(request, is_mobile=is_mobile)
+
+
+def process_divination_for_ui(
+    # Date inputs (Western)
+    use_western_date: bool,
+    year: int, month: int, day: int, hour: int,
+    # Date inputs (Gan-Zhi) - now strings like "甲子"
+    year_pillar_str: str, year_branch_placeholder: str,
+    month_pillar_str: str, month_branch_placeholder: str,
+    day_pillar_str: str, day_branch_placeholder: str,
+    hour_pillar_str: str, hour_branch_placeholder: str,
+    # Yao inputs (Button method)
+    use_button_method: bool,
+    yao1_type, yao1_changing, yao2_type, yao2_changing,
+    yao3_type, yao3_changing, yao4_type, yao4_changing,
+    yao5_type, yao5_changing, yao6_type, yao6_changing,
+    # Yao inputs (Name method)
+    hexagram_name_query: str,
+    selected_hexagram_code: str,
+    name_yao1_changing, name_yao2_changing, name_yao3_changing,
+    name_yao4_changing, name_yao5_changing, name_yao6_changing,
+    # Display options
+    is_mobile: bool = False
+) -> tuple[str, str]:
+    """
+    Process divination for UI, returning both versions (with and without prompt)
+    
+    This function is similar to process_divination but returns both formatted results.
+    
+    Returns:
+        Tuple of (formatted_result_with_prompt, formatted_result_without_prompt)
+        If error occurs, both values will be the error message string
+    """
+    # Build request object from parameters
+    # Convert to int in case Number components return floats
+    request = DivinationRequest(
+        use_western_date=use_western_date,
+        western_date=WesternDateInput(year=int(year), month=int(month), day=int(day), hour=int(hour)) if use_western_date else None,
+        ganzhi_date=GanzhiDateInput(
+            year_pillar=year_pillar_str or "",
+            month_pillar=month_pillar_str or "",
+            day_pillar=day_pillar_str or "",
+            hour_pillar=hour_pillar_str or ""
+        ) if not use_western_date else None,
+        use_button_method=use_button_method,
+        button_method=ButtonMethodInput(
+            yao1_type=yao1_type or "陽",
+            yao1_changing=bool(yao1_changing),
+            yao2_type=yao2_type or "陽",
+            yao2_changing=bool(yao2_changing),
+            yao3_type=yao3_type or "陽",
+            yao3_changing=bool(yao3_changing),
+            yao4_type=yao4_type or "陽",
+            yao4_changing=bool(yao4_changing),
+            yao5_type=yao5_type or "陽",
+            yao5_changing=bool(yao5_changing),
+            yao6_type=yao6_type or "陽",
+            yao6_changing=bool(yao6_changing),
+        ) if use_button_method else None,
+        name_method=NameMethodInput(
+            hexagram_name_query=hexagram_name_query or "",
+            selected_hexagram_code=selected_hexagram_code or "",
+            changing_lines=[
+                bool(name_yao1_changing),
+                bool(name_yao2_changing),
+                bool(name_yao3_changing),
+                bool(name_yao4_changing),
+                bool(name_yao5_changing),
+                bool(name_yao6_changing),
+            ]
+        ) if not use_button_method else None
+    )
+    
+    try:
+        # Step 1: Create BaZi object
+        bazi, error = create_bazi_from_inputs(request)
+        if error:
+            return error, error
+        
+        # Step 2: Get hexagram code and changing lines
+        hexagram_code, error, changing_lines = get_hexagram_code_from_inputs(request)
+        if error:
+            return error, error
+        
+        # Step 3: Perform divination
+        result_with_prompt, result_without_prompt, result_json, yao_list, error = perform_divination(hexagram_code, bazi, changing_lines, is_mobile=is_mobile)
+        if error:
+            return error, error
+        
+        return result_with_prompt, result_without_prompt
+        
+    except Exception as e:
+        error_msg = ERROR_MESSAGES["general_error"].format(error=str(e))
+        return error_msg, error_msg
 

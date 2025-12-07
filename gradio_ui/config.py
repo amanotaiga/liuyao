@@ -65,8 +65,8 @@ class UIConfig:
     default_year_range: tuple = (1900, 2101)
     hexagram_search_cache_size: int = 100
     line_symbol_yang: str = "▅▅▅▅▅▅"
-    line_symbol_yin: str = "▅▅  ▅▅"
-    line_symbol_yin_clickable: str = "▅▅     ▅▅"
+    line_symbol_yin: str = "▅▅▅     ▅▅▅"
+    line_symbol_yin_clickable: str = "▅▅▅     ▅▅▅"
     change_mark_yang: str = " ○"
     change_mark_yin: str = " ×"
 

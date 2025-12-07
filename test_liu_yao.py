@@ -49,21 +49,18 @@ Python API Usage:
 from liu_yao import (
     six_yao_divination, 
     HEXAGRAM_MAP, 
-    format_liu_yao_display, 
-    format_liu_yao_display_as_image,
-    format_liu_yao_display_as_html,
     bazi_from_date_string,
     display_shen_sha_definitions
 )
 from ba_zi_base import Pillar, BaZi
-from gradio_ui.utils.formatting import format_divination_results
+from gradio_ui.utils.formatting import format_divination_results_pc
 import json
 import argparse
 import sys
 import io
 from typing import List, Optional
 
-# Note: format_divination_results is now imported from gradio_ui.utils.formatting
+# Note: format_divination_results_pc is now imported from gradio_ui.utils.formatting
 # This ensures the function is shared between test_liu_yao.py and gradio_ui.py
 
 
@@ -160,96 +157,9 @@ def test_custom_divination(
     yao_list, result_json = six_yao_divination(hexagram_code, bazi, changing_lines)
     
     # Display results using the shared formatting function
-    formatted_output = format_divination_results(bazi, result_json, yao_list, show_shen_sha=show_shen_sha)
+    # Function now returns (with_prompt, without_prompt), use with_prompt for test output
+    formatted_output, _ = format_divination_results_pc(bazi, result_json, yao_list, show_shen_sha=show_shen_sha)
     print(formatted_output, end='')  # end='' because the function already includes all newlines
-    
-    return yao_list, result_json
-
-
-def test_image_and_html_rendering(
-    year: int = 2025,
-    month: int = 11,
-    day: int = 25,
-    hour: int = 19,
-    minute: int = 0,
-    second: int = 0,
-    hexagram_code: str = "111111",
-    changing_lines: List[int] = [1],
-    manual_bazi: Optional[BaZi] = None,
-    show_shen_sha: bool = True,
-    save_image: bool = True,
-    save_html: bool = True,
-    image_path: str = "liu_yao_result.png",
-    html_path: str = "liu_yao_result.html"
-):
-    """Test image and HTML rendering of the Traditional Format Display
-    
-    Args:
-        year, month, day, hour, minute, second: Date/time parameters
-        hexagram_code: 6-digit hexagram code ('1'=yang, '0'=yin, bottom to top)
-        changing_lines: Which lines are changing (1-6)
-        manual_bazi: Optional BaZi object (if None, will calculate from date)
-        show_shen_sha: Whether to show shen sha markers
-        save_image: Whether to save image file
-        save_html: Whether to save HTML file
-        image_path: Path to save image
-        html_path: Path to save HTML
-    """
-    # Get BaZi
-    if manual_bazi is not None:
-        bazi = manual_bazi
-    else:
-        try:
-            date_str = f"{year}/{month:02d}/{day:02d} {hour:02d}:{minute:02d}:{second:02d}"
-            bazi = bazi_from_date_string(date_str)
-        except Exception as e:
-            print(f"Error creating BaZi from date: {e}")
-            return None, None
-    
-    # Perform divination
-    yao_list, result_json = six_yao_divination(hexagram_code, bazi, changing_lines)
-    
-    print("Testing Image and HTML Rendering")
-    print("=" * 70)
-    
-    # Test image rendering
-    if save_image:
-        try:
-            print(f"\nGenerating image: {image_path}")
-            format_liu_yao_display_as_image(
-                yao_list,
-                show_shen_sha=show_shen_sha,
-                save_path=image_path
-            )
-            print(f"✓ Image saved successfully: {image_path}")
-        except ImportError as e:
-            print(f"✗ Image rendering failed: {e}")
-            print("  Install Pillow: pip install Pillow")
-        except Exception as e:
-            print(f"✗ Image rendering failed: {e}")
-    else:
-        try:
-            img = format_liu_yao_display_as_image(yao_list, show_shen_sha=show_shen_sha)
-            if img:
-                print(f"\n✓ Image generated successfully (size: {img.size})")
-                print("  Use img.save('path.png') to save it")
-        except ImportError as e:
-            print(f"✗ Image rendering failed: {e}")
-        except Exception as e:
-            print(f"✗ Image rendering failed: {e}")
-    
-    # Test HTML rendering
-    if save_html:
-        try:
-            print(f"\nGenerating HTML: {html_path}")
-            html_content = format_liu_yao_display_as_html(yao_list, show_shen_sha=show_shen_sha)
-            with open(html_path, "w", encoding="utf-8") as f:
-                f.write(html_content)
-            print(f"✓ HTML saved successfully: {html_path}")
-        except Exception as e:
-            print(f"✗ HTML rendering failed: {e}")
-    
-    print("\n" + "=" * 70)
     
     return yao_list, result_json
 

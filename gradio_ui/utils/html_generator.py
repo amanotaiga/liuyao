@@ -72,10 +72,14 @@ def create_line_html(code: str, line_num: int, is_changing: bool, clickable: boo
     cursor_style = "cursor: pointer;" if clickable else ""
     extra_spacing = "  " if clickable else ""
     
+    # Add kanji for mobile display
+    kanji = "陽" if is_yang else "陰"
+    
     return f"""
-    <div class="hexagram-line {style['line_class']}" style="font-size: 26px; color: {style['text_color']}; font-weight: {'600' if is_changing else '400'}; padding: 14px 20px; border: 1.5px solid {style['border_color']}; border-radius: 8px; background: {style['bg_color']}; transition: all 0.3s ease; box-shadow: {style['shadow']}; text-align: center; width: 100%; min-height: 64px; display: flex; align-items: center; justify-content: center; {cursor_style}">
+    <div class="hexagram-line {style['line_class']}" style="font-size: 26px; color: {style['text_color']}; font-weight: {'600' if is_changing else '400'}; padding: 12px 20px; border: 1.5px solid {style['border_color']}; border-radius: 8px; background: {style['bg_color']}; transition: all 0.3s ease; box-shadow: {style['shadow']}; text-align: center; width: 100%; min-height: 64px; height: 64px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; {cursor_style}">
         <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-            <span style="font-family: 'SimSun', '宋体', monospace;">{style['line_html']}</span>
+            <span class="line-symbol-desktop" style="font-family: 'SimSun', '宋体', monospace;">{style['line_html']}</span>
+            <span class="line-symbol-mobile" style="font-family: 'SimSun', '宋体', monospace;">{kanji}</span>
             <span style="font-size: 13px; color: #000000; font-weight: 600; letter-spacing: 0.5px;">{extra_spacing}{line_num}爻 {change_mark}</span>
         </div>
     </div>
@@ -97,10 +101,14 @@ def create_changed_line_html(changed_code: str, line_num: int) -> str:
     is_yang = changed_code[code_index] == '1'
     style = get_line_style(is_yang, False)  # Changed lines are never marked as changing
     
+    # Add kanji for mobile display
+    kanji = "陽" if is_yang else "陰"
+    
     return f"""
-    <div class="hexagram-line {style['line_class']}" style="font-size: 26px; color: {style['text_color']}; font-weight: 400; padding: 14px 20px; border: 1.5px solid {style['border_color']}; border-radius: 8px; background: {style['bg_color']}; transition: all 0.3s ease; box-shadow: {style['shadow']}; text-align: center; width: 100%; min-height: 64px; display: flex; align-items: center; justify-content: center;">
+    <div class="hexagram-line {style['line_class']}" style="font-size: 26px; color: {style['text_color']}; font-weight: 400; padding: 12px 20px; border: 1.5px solid {style['border_color']}; border-radius: 8px; background: {style['bg_color']}; transition: all 0.3s ease; box-shadow: {style['shadow']}; text-align: center; width: 100%; min-height: 64px; height: 64px; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
         <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-            <span style="font-family: 'SimSun', '宋体', monospace;">{style['line_html']}</span>
+            <span class="line-symbol-desktop" style="font-family: 'SimSun', '宋体', monospace;">{style['line_html']}</span>
+            <span class="line-symbol-mobile" style="font-family: 'SimSun', '宋体', monospace;">{kanji}</span>
             <span style="font-size: 13px; color: #000000; font-weight: 600; letter-spacing: 0.5px;">  {line_num}爻</span>
         </div>
     </div>

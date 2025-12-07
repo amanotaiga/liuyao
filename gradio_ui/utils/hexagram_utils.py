@@ -101,3 +101,47 @@ def get_hexagram_name(code: str) -> Optional[str]:
         return HEXAGRAM_MAP[code].name
     return None
 
+
+# Mapping from element names to trigrams
+ELEMENT_TO_TRIGRAM = {
+    "天": "乾",
+    "地": "坤",
+    "水": "坎",
+    "火": "離",
+    "風": "巽",
+    "雷": "震",
+    "山": "艮",
+    "澤": "兌"
+}
+
+
+@lru_cache(maxsize=100)
+def search_hexagram_by_trigrams(outer_element: str, inner_element: str) -> List[Tuple[str, str]]:
+    """
+    Search hexagrams by outer and inner trigrams (represented by element names)
+    
+    Args:
+        outer_element: Outer trigram element name (e.g., "天", "地", "水", "火", "風", "雷", "山", "澤")
+        inner_element: Inner trigram element name
+    
+    Returns:
+        List of tuples (hexagram_code, full_name)
+    """
+    if not outer_element or not inner_element:
+        return []
+    
+    # Convert element names to trigrams
+    outer_trigram = ELEMENT_TO_TRIGRAM.get(outer_element)
+    inner_trigram = ELEMENT_TO_TRIGRAM.get(inner_element)
+    
+    if not outer_trigram or not inner_trigram:
+        return []
+    
+    matches = []
+    for code, info in HEXAGRAM_MAP.items():
+        # Try exact match first (outer=outer, inner=inner)
+        if info.outer_hexagram == outer_trigram and info.inner_hexagram == inner_trigram:
+            matches.append((code, info.name))
+    
+    return matches
+

@@ -18,6 +18,7 @@ from ..utils.html_generator import (
 )
 from ..utils.hexagram_utils import (
     search_hexagram_by_name,
+    search_hexagram_by_trigrams,
     get_hexagram_code_from_dropdown,
     calculate_changed_hexagram
 )
@@ -26,13 +27,16 @@ from ..utils.hexagram_utils import (
 @dataclass
 class NameSearchHexagramInputs:
     """Components for hexagram name search input tab"""
-    hexagram_name_input: gr.Textbox
+    element_buttons: List[Tuple[str, gr.Button]]
+    outer_element_state: gr.State
+    inner_element_state: gr.State
     hexagram_dropdown: gr.Dropdown
     selected_hexagram_code_state: gr.State
     changing_checkboxes: List[gr.Checkbox]
     hexagram_line_containers: List[gr.HTML]
     changed_hexagram_line_containers: List[gr.HTML]
     calculate_btn: gr.Button
+    compact_view_checkbox: gr.Checkbox
 
 
 @dataclass
@@ -44,6 +48,7 @@ class ClickableHexagramInputs:
     clickable_changing_checkboxes: List[gr.Checkbox]
     clickable_changed_hexagram_line_containers: List[gr.HTML]
     calculate_btn: gr.Button
+    compact_view_checkbox: gr.Checkbox
 
 
 @dataclass
@@ -61,36 +66,54 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
     Returns:
         Tuple of (NameSearchHexagramInputs, setup_handlers function)
     """
-    gr.Markdown("### 輸入卦名", elem_classes=["section-header"])
-    
-    with gr.Row():
-        hexagram_name_input = gr.Textbox(
-            label="卦名搜尋",
-            placeholder="例如：山地、天風、乾為天",
-            interactive=True
-        )
-        hexagram_dropdown = gr.Dropdown(
-            label="選擇卦象",
-            choices=[],
-            interactive=True
-        )
-    
-    # Store selected hexagram code
-    selected_hexagram_code_state = gr.State(value=DEFAULT_HEXAGRAM_CODE)
-    
-    gr.Markdown("### 卦象預覽", elem_classes=["section-header"])
+    gr.Markdown("### 選擇卦象", elem_classes=["section-header"])
     gr.Markdown(
-        "<p style='color: #868e96; font-size: 13px; margin-top: -8px; margin-bottom: 20px; line-height: 1.6; overflow: visible; white-space: normal; word-wrap: break-word;'>勾選右側的複選框標記動爻（從下往上：1爻、2爻、3爻、4爻、5爻、6爻）</p>",
+        "<p style='color: #868e96; font-size: 13px; margin-top: -6px; margin-bottom: 12px;'>點擊兩次選擇外卦和內卦（例如：點擊兩次「天」為「乾為天」）</p>",
         elem_classes=["text-muted"]
     )
     
+    # 8 trigram element buttons
+    ELEMENT_NAMES = ["天", "地", "水", "火", "風", "雷", "山", "澤"]
+    
+    with gr.Row():
+        with gr.Column(scale=1):            
+            # Create 8 buttons in a grid (2 rows × 4 columns)
+            element_buttons = []
+            with gr.Column():
+                for i in range(0, 8, 4):
+                    with gr.Row():
+                        for j in range(4):
+                            if i + j < 8:
+                                element = ELEMENT_NAMES[i + j]
+                                btn = gr.Button(
+                                    element,
+                                    size="lg",
+                                    elem_classes=["ganzhi-button"]
+                                )
+                                element_buttons.append((element, btn))
+        
+        with gr.Column(scale=1, elem_classes=["column-spacing"]):
+            hexagram_dropdown = gr.Dropdown(
+                label="選擇卦象",
+                choices=[],
+                value=None,
+                interactive=True
+            )
+    
+    # State variables for tracking selections
+    outer_element_state = gr.State(value="")
+    inner_element_state = gr.State(value="")
+    
+    # Store selected hexagram code
+    selected_hexagram_code_state = gr.State(value=DEFAULT_HEXAGRAM_CODE)
+        
     # Create a container for hexagram lines with checkboxes and changed hexagram
     with gr.Row(elem_classes=["hexagram-display-row"]):
         # Left column: Original hexagram (本卦)
-        with gr.Column(scale=1, elem_classes=["column-spacing"]):
+        with gr.Column(scale=3, elem_classes=["column-spacing"]):
             gr.Markdown("### 本卦", elem_classes=["section-header"])
             gr.Markdown(
-                "<p style='color: #868e96; font-size: 12px; margin-top: -8px; margin-bottom: 16px;'>原始卦象</p>",
+                "<p style='color: #868e96; font-size: 12px; margin-top: -6px; margin-bottom: 10px;'>原始卦象</p>",
                 elem_classes=["text-muted"]
             )
             hexagram_line_containers = []
@@ -101,8 +124,7 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
                 initial_html = create_line_html(initial_code, line_num, False, clickable=False)
                 line_html = gr.HTML(
                     value=initial_html,
-                    elem_classes=["hexagram-line-container"],
-                    min_width=300
+                    elem_classes=["hexagram-line-container"]
                 )
                 hexagram_line_containers.append(line_html)
         
@@ -110,7 +132,7 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
         with gr.Column(scale=1, elem_classes=["column-spacing"]):
             gr.Markdown("### 動爻", elem_classes=["section-header"])
             gr.Markdown(
-                "<p style='color: #868e96; font-size: 12px; margin-top: -8px; margin-bottom: 16px; line-height: 1.6; overflow: visible; white-space: normal; word-wrap: break-word;'>選擇變化的爻</p>",
+                "<p style='color: #868e96; font-size: 12px; margin-top: -6px; margin-bottom: 10px; line-height: 1.6; overflow: visible; white-space: normal; word-wrap: break-word;'>選擇變化的爻</p>",
                 elem_classes=["text-muted"]
             )
             changing_checkboxes = []
@@ -127,10 +149,10 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
                 changing_checkboxes.append(checkbox)
         
         # Right column: Changed hexagram (變卦)
-        with gr.Column(scale=1, elem_classes=["column-spacing"]):
+        with gr.Column(scale=3, elem_classes=["column-spacing"]):
             gr.Markdown("### 變卦", elem_classes=["section-header"])
             gr.Markdown(
-                "<p style='color: #868e96; font-size: 12px; margin-top: -8px; margin-bottom: 16px;'>變化後的卦象</p>",
+                "<p style='color: #868e96; font-size: 12px; margin-top: -6px; margin-bottom: 10px;'>變化後的卦象</p>",
                 elem_classes=["text-muted"]
             )
             changed_hexagram_line_containers = []
@@ -141,8 +163,7 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
                 initial_html = create_line_html(initial_code, line_num, False, clickable=False)
                 line_html = gr.HTML(
                     value=initial_html,
-                    elem_classes=["hexagram-line-container"],
-                    min_width=300
+                    elem_classes=["hexagram-line-container"]
                 )
                 changed_hexagram_line_containers.append(line_html)
     
@@ -188,7 +209,63 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
         # Return both in visual order (6 to 1, top to bottom)
         return original_line_htmls, changed_line_htmls
     
-    # Update dropdown when name changes
+    # Handler for element button clicks
+    def handle_element_click(clicked_element, current_outer, current_inner, *changing_lines):
+        """Handle click on an element button"""
+        new_element = clicked_element
+        
+        if not current_outer:
+            # First click - select outer element
+            selection_text = f"{new_element}[待選內卦]"
+            return (
+                new_element,  # outer_element_state
+                "",  # inner_element_state
+                gr.Dropdown(choices=[selection_text], value=selection_text),  # dropdown - show selection text in choices
+                "",  # selected_hexagram_code_state
+                *[gr.update(value=False)] * 6,  # checkbox updates
+                *[gr.update()] * 6,  # original line updates
+                *[gr.update()] * 6   # changed line updates
+            )
+        
+        # Second click - select inner element
+        inner_element = new_element
+        selection_text = f"{current_outer}{inner_element}"
+        
+        # Search for hexagrams matching both trigrams
+        matches = search_hexagram_by_trigrams(current_outer, inner_element)
+        
+        if matches:
+            choices = [f"{code} - {name}" for code, name in matches]
+            selected_code = matches[0][0]
+            selected_value = choices[0]
+            # Reset all changing checkboxes when new hexagram is selected
+            checkbox_updates = [gr.update(value=False)] * 6
+            # Update hexagram lines (both original and changed)
+            original_updates, changed_updates = update_hexagram_lines(selected_code, *[False] * 6)
+            
+            # Reset for next selection
+            return (
+                "",  # outer_element_state (reset)
+                "",  # inner_element_state (reset)
+                gr.Dropdown(choices=choices, value=selected_value),  # dropdown
+                selected_code,  # selected_hexagram_code_state
+                *checkbox_updates,  # checkbox updates
+                *original_updates,  # original line updates
+                *changed_updates    # changed line updates
+            )
+        else:
+            # No matches found
+            return (
+                "",  # outer_element_state (reset)
+                "",  # inner_element_state (reset)
+                gr.Dropdown(choices=[], value=None),  # dropdown
+                "",  # selected_hexagram_code_state
+                *[gr.update(value=False)] * 6,  # checkbox updates
+                *[gr.update()] * 6,  # original line updates
+                *[gr.update()] * 6   # changed line updates
+            )
+    
+    # Update dropdown when name changes (kept for backward compatibility if needed)
     def on_name_change(query):
         matches = search_hexagram_by_name(query)
         if matches:
@@ -222,12 +299,24 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
     
     # Setup handlers function
     def setup_handlers():
-        # Update dropdown when name changes
-        hexagram_name_input.change(
-            fn=on_name_change,
-            inputs=[hexagram_name_input],
-            outputs=[hexagram_dropdown, selected_hexagram_code_state] + changing_checkboxes + hexagram_line_containers + changed_hexagram_line_containers
-        )
+        # Wire up element buttons
+        def make_element_handler(element):
+            def handler(current_outer, current_inner, *changing_lines):
+                return handle_element_click(element, current_outer, current_inner, *changing_lines)
+            return handler
+        
+        for element, button in element_buttons:
+            handler = make_element_handler(element)
+            button.click(
+                fn=handler,
+                inputs=[outer_element_state, inner_element_state] + changing_checkboxes,
+                outputs=[
+                    outer_element_state,
+                    inner_element_state,
+                    hexagram_dropdown,
+                    selected_hexagram_code_state
+                ] + changing_checkboxes + hexagram_line_containers + changed_hexagram_line_containers
+            )
         
         # Update lines when dropdown changes
         hexagram_dropdown.change(
@@ -244,18 +333,28 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
                 outputs=hexagram_line_containers + changed_hexagram_line_containers
             )
     
-    # Calculate button
+    # Calculate button with compact view checkbox
     gr.Markdown("---", elem_classes=["section-divider"])
-    calculate_btn = gr.Button("開始排盤", variant="primary", size="lg")
+    with gr.Row():
+        calculate_btn = gr.Button("開始排盤", variant="primary", size="lg", scale=4)
+        compact_view_checkbox = gr.Checkbox(
+            label="簡潔模式",
+            value=False,
+            scale=1,
+            min_width=80
+        )
     
     name_search_inputs = NameSearchHexagramInputs(
-        hexagram_name_input=hexagram_name_input,
+        element_buttons=element_buttons,
+        outer_element_state=outer_element_state,
+        inner_element_state=inner_element_state,
         hexagram_dropdown=hexagram_dropdown,
         selected_hexagram_code_state=selected_hexagram_code_state,
         changing_checkboxes=changing_checkboxes,
         hexagram_line_containers=hexagram_line_containers,
         changed_hexagram_line_containers=changed_hexagram_line_containers,
-        calculate_btn=calculate_btn
+        calculate_btn=calculate_btn,
+        compact_view_checkbox=compact_view_checkbox
     )
     
     return name_search_inputs, setup_handlers
@@ -270,7 +369,7 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
     """
     gr.Markdown("### 點擊爻線輸入卦象", elem_classes=["section-header"])
     gr.Markdown(
-        "<p style='color: #868e96; font-size: 13px; margin-top: -8px; margin-bottom: 20px;'>點擊下方的爻線來切換陽（▅▅▅▅▅▅）和陰（▅▅  ▅▅），從下往上：1爻、2爻、3爻、4爻、5爻、6爻</p>",
+        "<p style='color: #868e96; font-size: 13px; margin-top: -6px; margin-bottom: 12px;'>點擊下方的爻線來切換陽爻（▅▅▅▅▅▅）和陰爻（▅▅  ▅▅）</p>",
         elem_classes=["text-muted"]
     )
     
@@ -330,10 +429,10 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
     # Create a container for hexagram lines with checkboxes and changed hexagram
     with gr.Row(elem_classes=["hexagram-display-row"]):
         # Left column: Original hexagram (本卦) with clickable lines
-        with gr.Column(scale=1, elem_classes=["column-spacing"]):
+        with gr.Column(scale=3, elem_classes=["column-spacing"]):
             gr.Markdown("### 本卦", elem_classes=["section-header"])
             gr.Markdown(
-                "<p style='color: #868e96; font-size: 12px; margin-top: -8px; margin-bottom: 16px;'>點擊爻線切換陽陰</p>",
+                "<p style='color: #868e96; font-size: 12px; margin-top: -6px; margin-bottom: 10px;'>點擊爻線切換陽陰</p>",
                 elem_classes=["text-muted"]
             )
             clickable_line_buttons = []
@@ -342,6 +441,7 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
             for i in range(5, -1, -1):  # 5 to 0, so line 6 to line 1
                 line_num = i + 1
                 is_yang = initial_code[i] == '1'
+                # Format: "SYMBOL line_num爻" - no kanji in button text, CSS will add kanji on mobile via ::before
                 button_value = f"{UI_CONFIG.line_symbol_yang if is_yang else UI_CONFIG.line_symbol_yin} {line_num}爻"
                 
                 button_classes = ["yao-line-button"]
@@ -350,11 +450,11 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
                 else:
                     button_classes.append("yin-button")
                 
+                elem_id = f"yao-btn-{line_num}"
                 line_button = gr.Button(
                     value=button_value,
                     elem_classes=button_classes,
-                    size="lg",
-                    min_width=350
+                    elem_id=elem_id
                 )
                 clickable_line_buttons.append((line_num, line_button))
         
@@ -362,7 +462,7 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
         with gr.Column(scale=1, elem_classes=["column-spacing"]):
             gr.Markdown("### 動爻", elem_classes=["section-header"])
             gr.Markdown(
-                "<p style='color: #868e96; font-size: 12px; margin-top: -8px; margin-bottom: 16px; line-height: 1.6; overflow: visible; white-space: normal; word-wrap: break-word;'>選擇變化的爻</p>",
+                "<p style='color: #868e96; font-size: 12px; margin-top: -6px; margin-bottom: 10px; line-height: 1.6; overflow: visible; white-space: normal; word-wrap: break-word;'>選擇變化的爻</p>",
                 elem_classes=["text-muted"]
             )
             clickable_changing_checkboxes = []
@@ -380,10 +480,10 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
             clickable_changing_checkboxes.reverse()
         
         # Right column: Changed hexagram (變卦)
-        with gr.Column(scale=1, elem_classes=["column-spacing"]):
+        with gr.Column(scale=3, elem_classes=["column-spacing"]):
             gr.Markdown("### 變卦", elem_classes=["section-header"])
             gr.Markdown(
-                "<p style='color: #868e96; font-size: 12px; margin-top: -8px; margin-bottom: 16px;'>變化後的卦象</p>",
+                "<p style='color: #868e96; font-size: 12px; margin-top: -6px; margin-bottom: 10px;'>變化後的卦象</p>",
                 elem_classes=["text-muted"]
             )
             clickable_changed_hexagram_line_containers = []
@@ -394,14 +494,13 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
                 initial_html = create_line_html(initial_code, line_num, False, clickable=True)
                 line_html = gr.HTML(
                     value=initial_html,
-                    elem_classes=["hexagram-line-container"],
-                    min_width=300
+                    elem_classes=["hexagram-line-container"]
                 )
                 clickable_changed_hexagram_line_containers.append(line_html)
     
     # Function to handle line button clicks
     def handle_line_click(line_num, current_code, *changing_lines):
-        """Handle click on a line button"""
+        """Handle click on a line button - optimized for speed"""
         if not current_code or len(current_code) != 6:
             current_code = DEFAULT_HEXAGRAM_CODE
         
@@ -411,39 +510,54 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
         code_list[index] = '1' if code_list[index] == '0' else '0'
         new_code = ''.join(code_list)
         
-        # Get changed hexagram updates
-        _, changed_updates = update_clickable_hexagram_display(new_code, *changing_lines)[1:]
-        
-        # Map checkbox values to line numbers
+        # Map checkbox values to line numbers (only once)
         changing_line_nums = []
         for visual_index, is_changing in enumerate(changing_lines):
             line_num_actual = 6 - visual_index
             if is_changing:
                 changing_line_nums.append(line_num_actual)
         
-        # Update button text and styling
+        # Calculate changed hexagram code (only once)
+        changed_code = calculate_changed_hexagram(new_code, changing_line_nums)
+        
+        # Only update the clicked button, not all 6
+        clicked_button_index = 6 - line_num  # Convert line_num (1-6) to visual index (0-5)
+        is_yang = new_code[index] == '1'
+        is_changing = line_num in changing_line_nums
+        line_symbol = UI_CONFIG.line_symbol_yang if is_yang else UI_CONFIG.line_symbol_yin
+        change_mark = UI_CONFIG.change_mark_yang if (is_changing and is_yang) else (UI_CONFIG.change_mark_yin if (is_changing and not is_yang) else "")
+        button_text = f"{line_symbol}{line_num}爻 {change_mark}"
+        
+        button_classes = ["yao-line-button"]
+        if is_yang:
+            button_classes.append("yang-button")
+        else:
+            button_classes.append("yin-button")
+        if is_changing:
+            button_classes.append("changing")
+        
+        elem_id = f"yao-btn-{line_num}"
+        clicked_button_update = gr.update(value=button_text, elem_classes=button_classes, elem_id=elem_id)
+        
+        # Create updates for all buttons (needed for proper state, but only clicked one changes)
         button_updates = []
         for visual_index in range(6):
             actual_line_num = 6 - visual_index
-            code_index = actual_line_num - 1
-            is_yang = new_code[code_index] == '1'
-            is_changing = actual_line_num in changing_line_nums
-            line_symbol = UI_CONFIG.line_symbol_yang if is_yang else UI_CONFIG.line_symbol_yin
-            change_mark = UI_CONFIG.change_mark_yang if (is_changing and is_yang) else (UI_CONFIG.change_mark_yin if (is_changing and not is_yang) else "")
-            button_text = f"{line_symbol}{actual_line_num}爻 {change_mark}"
-            
-            button_classes = ["yao-line-button"]
-            if is_yang:
-                button_classes.append("yang-button")
+            if visual_index == clicked_button_index:
+                button_updates.append(clicked_button_update)
             else:
-                button_classes.append("yin-button")
-            if is_changing:
-                button_classes.append("changing")
-            
-            elem_id = f"yao-btn-{actual_line_num}"
-            button_updates.append(gr.update(value=button_text, elem_classes=button_classes, elem_id=elem_id))
+                # Keep other buttons unchanged
+                button_updates.append(gr.update())
         
-        return [new_code] + button_updates + changed_updates
+        # Generate changed hexagram HTML (only for 變卦)
+        changed_line_htmls = []
+        for visual_index in range(6):
+            actual_line_num = 6 - visual_index
+            changed_html = create_changed_line_html(changed_code, actual_line_num)
+            changed_html = changed_html.replace(f">{actual_line_num}爻", f">  {actual_line_num}爻")
+            changed_line_htmls.append(changed_html)
+        
+        return [new_code] + button_updates + changed_line_htmls
     
     # Function to update displays when changing checkboxes change
     def update_clickable_with_changing(code, *changing_lines):
@@ -470,6 +584,7 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
             is_changing = actual_line_num in changing_line_nums
             line_symbol = UI_CONFIG.line_symbol_yang if is_yang else UI_CONFIG.line_symbol_yin
             change_mark = UI_CONFIG.change_mark_yang if (is_changing and is_yang) else (UI_CONFIG.change_mark_yin if (is_changing and not is_yang) else "")
+            # Format: "SYMBOL line_num爻 change_mark" - no kanji in button text, CSS will add kanji on mobile via ::before
             button_text = f"{line_symbol}{actual_line_num}爻 {change_mark}"
             
             button_classes = ["yao-line-button"]
@@ -506,7 +621,8 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
                     clickable_changing_checkboxes[1],  # 5爻
                     clickable_changing_checkboxes[0],  # 6爻
                 ],
-                outputs=[clickable_hexagram_code_state] + [btn for _, btn in clickable_line_buttons] + clickable_changed_hexagram_line_containers
+                outputs=[clickable_hexagram_code_state] + [btn for _, btn in clickable_line_buttons] + clickable_changed_hexagram_line_containers,
+                queue=False  # Make updates immediate, no queue delay
             )
         
         # Wire up each checkbox to update its corresponding state variable
@@ -551,9 +667,16 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
                 outputs=[btn for _, btn in clickable_line_buttons] + clickable_changed_hexagram_line_containers
             )
     
-    # Calculate button
+    # Calculate button with compact view checkbox
     gr.Markdown("---", elem_classes=["section-divider"])
-    calculate_btn = gr.Button("開始排盤", variant="primary", size="lg")
+    with gr.Row():
+        calculate_btn = gr.Button("開始排盤", variant="primary", size="lg", scale=4)
+        compact_view_checkbox = gr.Checkbox(
+            label="簡潔模式",
+            value=False,
+            scale=1,
+            min_width=80
+        )
     
     clickable_inputs = ClickableHexagramInputs(
         clickable_hexagram_code_state=clickable_hexagram_code_state,
@@ -561,7 +684,8 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
         clickable_line_buttons=clickable_line_buttons,
         clickable_changing_checkboxes=clickable_changing_checkboxes,
         clickable_changed_hexagram_line_containers=clickable_changed_hexagram_line_containers,
-        calculate_btn=calculate_btn
+        calculate_btn=calculate_btn,
+        compact_view_checkbox=compact_view_checkbox
     )
     
     return clickable_inputs, setup_handlers
@@ -576,12 +700,12 @@ def create_hexagram_inputs() -> HexagramInputComponents:
     """
     with gr.Tabs() as hexagram_tabs:
         # Name Search Tab
-        with gr.Tab("卦象輸入"):
+        with gr.Tab("八卦組卦"):
             name_search, setup_name_handlers = create_name_search_tab()
             setup_name_handlers()
         
         # Clickable Tab
-        with gr.Tab("卦象輸入 (點擊)"):
+        with gr.Tab("逐爻起卦"):
             clickable, setup_clickable_handlers = create_clickable_tab()
             setup_clickable_handlers()
     

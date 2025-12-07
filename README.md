@@ -43,6 +43,7 @@ A comprehensive Python implementation of the Liu Yao (六爻) divination system,
   - Six relatives (六親) relationships
   - Six spirits (六神) assignment
 - **Modern Web Interface**: Beautiful Gradio-based UI with real-time visualization
+- **Responsive Design**: Mobile-friendly compact view option with optimized formatting for different screen sizes
 - **Modular Architecture**: Well-organized, maintainable codebase with separation of concerns
 - **Multiple Output Formats**: Text, HTML, and image rendering support
 
@@ -61,14 +62,15 @@ A comprehensive Python implementation of the Liu Yao (六爻) divination system,
 
 2. Install required packages:
 
+**Option A: Using requirements.txt (Recommended)**
 ```bash
-pip install gradio
+pip install -r requirements.txt
 ```
 
-3. (Optional) For automatic BaZi calculation from dates:
-
+**Option B: Manual installation**
 ```bash
-pip install lunar_python
+pip install gradio>=4.0.0
+pip install lunar_python>=0.0.9  # Optional, for automatic BaZi calculation from dates
 ```
 
 **Note**: If `lunar_python` is not installed, you can still use the system by providing BaZi information manually using the Gan-Zhi calendar input method.
@@ -93,6 +95,11 @@ python -m gradio_ui.main
 ```bash
 cd gradio_ui
 python main.py
+```
+
+**Method 4: Using app.py (for Hugging Face Spaces deployment)**
+```bash
+python app.py
 ```
 
 This will start a local web server (typically at `http://127.0.0.1:7860`). Open the URL in your browser to access the interface.
@@ -130,6 +137,7 @@ print(format_liu_yao_display(yao_list, show_shen_sha=True))
 
 ```
 liuyao/
+├── app.py                    # Hugging Face Spaces entry point
 ├── gradio_ui/                # Gradio UI package (refactored)
 │   ├── __init__.py
 │   ├── main.py               # Main entry point
@@ -156,6 +164,7 @@ liuyao/
 │       ├── styles.css        # CSS styles
 │       └── scripts.js        # JavaScript
 ├── run_gradio_ui.py          # Convenience script to run UI
+├── requirements.txt          # Python dependencies
 ├── gradio_ui.py              # Legacy UI (kept for reference)
 ├── liu_yao.py                # Core divination engine
 ├── ba_zi_base.py             # Pillar and BaZi data structures
@@ -192,11 +201,15 @@ The UI has been refactored into a well-organized package:
 - **`divination_handlers.py`**: Main divination processing with data classes
 
 #### Utils (`gradio_ui/utils/`)
-- **`formatting.py`**: Result formatting functions
+- **`formatting.py`**: Result formatting functions (PC and mobile formats)
 - **`hexagram_utils.py`**: Hexagram search and calculation utilities
 - **`html_generator.py`**: HTML generation for hexagram visualization
 - **`static_loader.py`**: CSS and JavaScript file loading
 - **`validation.py`**: Input validation functions
+
+#### Static Assets (`gradio_ui/static/`)
+- **`styles.css`**: Responsive CSS styles with mobile support
+- **`scripts.js`**: JavaScript for interactive UI features
 
 #### Configuration (`gradio_ui/config.py`)
 - Constants and configuration settings
@@ -249,6 +262,10 @@ Formats divination results as a traditional table display.
 
 #### Entry Points
 
+**`app.py`**: Entry point for Hugging Face Spaces and cloud deployments.
+
+**`run_gradio_ui.py`**: Convenience script to launch the UI from project root.
+
 **`gradio_ui/main.py`**: Main entry point that can be run directly or imported as a module.
 
 **`gradio_ui/ui_builder.py`**: Orchestrates all UI components to create the complete Gradio interface.
@@ -268,6 +285,7 @@ Formats divination results as a traditional table display.
 **Result Display** (`gradio_ui/components/result_display.py`):
 - Formatted result table
 - Scrollable output area
+- Mobile-responsive formatting support
 
 #### Handlers
 

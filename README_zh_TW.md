@@ -43,6 +43,7 @@
   - 六親關係
   - 六神配置
 - **現代網頁介面**：美觀的 Gradio 介面，支援即時視覺化
+- **響應式設計**：支援行動裝置的緊湊檢視選項，針對不同螢幕尺寸優化格式
 - **模組化架構**：組織良好的程式碼，易於維護，關注點分離
 - **多種輸出格式**：支援文字、HTML 和圖片渲染
 
@@ -61,14 +62,15 @@
 
 2. 安裝必要套件：
 
+**選項 A：使用 requirements.txt（推薦）**
 ```bash
-pip install gradio
+pip install -r requirements.txt
 ```
 
-3. （選用）若要從日期自動計算八字：
-
+**選項 B：手動安裝**
 ```bash
-pip install lunar_python
+pip install gradio>=4.0.0
+pip install lunar_python>=0.0.9  # 選用，用於從西曆日期自動計算八字
 ```
 
 **注意**：如果未安裝 `lunar_python`，您仍可使用系統，只需透過干支曆輸入方式手動提供八字資訊。
@@ -93,6 +95,11 @@ python -m gradio_ui.main
 ```bash
 cd gradio_ui
 python main.py
+```
+
+**方法 4：使用 app.py（用於 Hugging Face Spaces 部署）**
+```bash
+python app.py
 ```
 
 這會啟動本地網頁伺服器（通常在 `http://127.0.0.1:7860`）。在瀏覽器中開啟該網址以存取介面。
@@ -130,6 +137,7 @@ print(format_liu_yao_display(yao_list, show_shen_sha=True))
 
 ```
 liuyao/
+├── app.py                    # Hugging Face Spaces 進入點
 ├── gradio_ui/                # Gradio UI 套件（已重構）
 │   ├── __init__.py
 │   ├── main.py               # 主進入點
@@ -154,8 +162,9 @@ liuyao/
 │   │   └── validation.py      # 輸入驗證
 │   └── static/               # 靜態資源
 │       ├── styles.css        # CSS 樣式
-│       └── scripts.js        # JavaScript
+│       └── scripts.js         # JavaScript
 ├── run_gradio_ui.py          # 執行 UI 的便利腳本
+├── requirements.txt          # Python 相依套件
 ├── gradio_ui.py              # 舊版 UI（保留供參考）
 ├── liu_yao.py                # 核心占卜引擎
 ├── ba_zi_base.py             # 柱和八字資料結構
@@ -193,11 +202,15 @@ UI 已重構為組織良好的套件：
 - **`divination_handlers.py`**：使用資料類別的占卜處理
 
 #### 工具（`gradio_ui/utils/`）
-- **`formatting.py`**：結果格式化函數
+- **`formatting.py`**：結果格式化函數（PC 和行動裝置格式）
 - **`hexagram_utils.py`**：卦象搜尋與計算工具
 - **`html_generator.py`**：卦象視覺化的 HTML 生成
 - **`static_loader.py`**：CSS 和 JavaScript 檔案載入
 - **`validation.py`**：輸入驗證函數
+
+#### 靜態資源（`gradio_ui/static/`）
+- **`styles.css`**：響應式 CSS 樣式，支援行動裝置
+- **`scripts.js`**：互動式 UI 功能的 JavaScript
 
 #### 配置（`gradio_ui/config.py`）
 - 常數與配置設定
@@ -250,6 +263,10 @@ UI 已重構為組織良好的套件：
 
 #### 進入點
 
+**`app.py`**：Hugging Face Spaces 和雲端部署的進入點。
+
+**`run_gradio_ui.py`**：從專案根目錄啟動 UI 的便利腳本。
+
 **`gradio_ui/main.py`**：可直接執行或作為模組匯入的主進入點。
 
 **`gradio_ui/ui_builder.py`**：協調所有 UI 元件以建立完整的 Gradio 介面。
@@ -269,6 +286,7 @@ UI 已重構為組織良好的套件：
 **結果顯示**（`gradio_ui/components/result_display.py`）：
 - 格式化結果表格
 - 可滾動輸出區域
+- 支援行動裝置響應式格式化
 
 #### 處理器
 

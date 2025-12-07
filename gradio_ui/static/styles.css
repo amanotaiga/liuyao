@@ -5,11 +5,46 @@ body {
     background-color: #ffffff;
 }
 
+/* Main Gradio Container - Constrain entire page width */
+.gradio-container {
+    max-width: 1000px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Tab Content - Ensure tabs respect container width */
+.gradio-tabs {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.gradio-tabs > .tab-nav {
+    max-width: 100% !important;
+}
+
+.gradio-tabs > .tab-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+/* Tab panels - prevent horizontal overflow */
+.gradio-tabs .tab-item {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+
 /* Main Container */
 .main-container {
-    max-width: 1400px;
+    max-width: 1000px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 4px;
 }
 
 /* Hexagram Line Styling */
@@ -31,12 +66,13 @@ body {
     font-weight: 600;
 }
 .hexagram-line-container {
-    margin: 4px 0;
+    margin: 2px 0; /* Match yao-line-button margin for consistent spacing */
 }
 
 /* Gan-Zhi Button Styling */
 .ganzhi-button {
     min-width: 50px !important;
+    max-width: 100% !important;
     font-family: 'SimSun', '宋体', monospace;
     font-size: 16px;
     padding: 10px 14px;
@@ -47,6 +83,8 @@ body {
     border: 2px solid #000000;
     color: #000000;
     font-weight: 600;
+    box-sizing: border-box !important;
+    flex: 1 1 auto !important;
 }
 .ganzhi-button:hover {
     transform: translateY(-2px);
@@ -71,36 +109,60 @@ body {
     100% { transform: scale(1); }
 }
 
-/* Yao Line Button Styling - Match 變卦 styling */
+/* Desktop: Show symbols, hide kanji for HTML elements */
+.line-symbol-desktop {
+    display: inline !important;
+}
+.line-symbol-mobile {
+    display: none !important;
+}
+
+/* Yao Line Button Styling - Match hexagram-line-container styling */
 .yao-line-button {
     font-family: 'SimSun', '宋体', monospace;
     font-size: 26px;
     font-weight: 400;
-    padding: 20px 20px;
+    padding: 12px 20px;
     border-radius: 8px;
     transition: all 0.3s ease;
-    min-height: 70px;
+    min-height: 64px;
+    height: 64px;
     text-align: center;
     width: 100%;
-    max-width: 350px;
-    margin: 4px 0;
-    margin-left: auto;
+    margin: 2px 0;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
+    position: relative;
+    box-sizing: border-box;
 }
 
-/* Container for 本卦 buttons - align to right */
-.hexagram-display-row .column-spacing:first-child {
+/* Desktop: Buttons show symbols normally */
+/* Button format: "SYMBOL line_num爻" - no kanji in button text */
+/* On desktop: Show button text normally (symbol + line number) */
+.yao-line-button::before {
+    display: none !important; /* No kanji via ::before on desktop */
+}
+/* Button text shows normally on desktop - symbols and line number visible */
+
+/* Container for 本卦 and 變卦 - fill column width without centering */
+.hexagram-display-row .column-spacing {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+
+.hexagram-display-row .column-spacing:first-child,
+.hexagram-display-row .column-spacing:last-child {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: stretch;
 }
 
-.hexagram-display-row .column-spacing:first-child > * {
+.hexagram-display-row .column-spacing:first-child > *,
+.hexagram-display-row .column-spacing:last-child > * {
     width: 100%;
-    max-width: 350px;
+    max-width: 100%;
 }
 /* Yang line buttons (red) - use multiple selectors for robustness */
 button.yao-line-button.yang-button,
@@ -190,6 +252,17 @@ button.yao-line-button *,
     background-color: #ffffff;
     border: 2px solid #000000;
     border-radius: 8px;
+}
+
+/* Hidden result table for copy functionality */
+.result-table-hidden {
+    position: absolute !important;
+    left: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
     padding: 20px;
     color: #000000;
 }
@@ -248,7 +321,11 @@ label {
 /* Changing Yao Checkbox Styling - Large Rectangular */
 .changing-yao-checkbox {
     width: 100% !important;
-    min-width: 300px !important;
+    min-width: 120px !important;
+    max-width: 250px !important;
+    overflow: hidden !important;
+    contain: layout style !important;
+    position: relative !important;
 }
 .changing-yao-checkbox > div,
 .changing-yao-checkbox > label,
@@ -263,7 +340,7 @@ label {
     border: 2px solid #000000 !important;
     border-radius: 8px !important;
     background: #ffffff !important;
-    transition: all 0.3s ease !important;
+    transition: box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
     cursor: pointer !important;
     font-size: 26px !important;
@@ -272,22 +349,21 @@ label {
     letter-spacing: 0.5px !important;
     gap: 12px !important;
     overflow: visible !important;
+    white-space: nowrap !important;
+    will-change: box-shadow !important;
 }
 .changing-yao-checkbox > div:hover,
 .changing-yao-checkbox > label:hover,
 .changing-yao-checkbox label:hover {
-    transform: translateY(-2px) !important;
+    transform: translateY(0) !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
     border-color: #000000 !important;
     background: #f0f0f0 !important;
 }
 .changing-yao-checkbox input[type="checkbox"] {
-    width: 28px !important;
-    height: 28px !important;
     cursor: pointer !important;
     accent-color: #000000 !important;
     margin: 0 !important;
-    flex-shrink: 0 !important;
 }
 .changing-yao-checkbox input[type="checkbox"]:checked ~ span,
 .changing-yao-checkbox:has(input[type="checkbox"]:checked) > div,
@@ -344,7 +420,7 @@ h1 {
     letter-spacing: 0.5px;
 }
 .main-title {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 h2 {
     font-size: 22px;
@@ -353,25 +429,32 @@ h2 {
 }
 h3 {
     font-size: 18px;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     color: #000000;
     font-weight: 700;
 }
 .section-header {
-    margin-bottom: 12px;
+    margin-bottom: 7px;
 }
 
 /* Section Spacing */
 .section-divider {
-    margin: 32px 0;
+    margin: 18px 0;
     border-top: 2px solid #000000;
     border-bottom: none;
 }
 
 /* Hexagram Display Row */
 .hexagram-display-row {
-    margin-top: 8px;
-    gap: 20px;
+    margin-top: 4px;
+    gap: 0px;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    flex-direction: row !important;
+    overflow: hidden !important;
 }
 
 /* Card-like Containers */
@@ -385,7 +468,45 @@ h3 {
 
 /* Column Spacing */
 .column-spacing {
-    padding: 0 12px;
+    padding: 0 2px;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+/* Ensure rows within tabs don't overflow */
+.gradio-row {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    flex-wrap: wrap !important;
+}
+
+/* Ensure columns within tabs respect width */
+.gradio-column {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+}
+
+/* Button rows - ensure they wrap and don't force expansion */
+.gradio-row:has(.ganzhi-button) {
+    flex-wrap: wrap !important;
+    max-width: 100% !important;
+    gap: 4px !important;
+}
+
+/* 地支 button rows - prevent wrapping to maintain 6 buttons per row */
+.dizhi-button-row {
+    flex-wrap: nowrap !important;
+    max-width: 100% !important;
+    gap: 4px !important;
+}
+
+/* Button containers - ensure they don't overflow */
+.gradio-row:has(.ganzhi-button) > * {
+    flex: 0 1 auto !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* Refined Text Colors */
@@ -541,6 +662,7 @@ h3 {
         color: #ffffff !important;
         box-shadow: 0 2px 4px rgba(255,255,255,0.2) !important;
         font-weight: 700 !important;
+        white-space: nowrap !important;
     }
     .changing-yao-checkbox > div:hover,
     .changing-yao-checkbox > label:hover,
@@ -665,4 +787,517 @@ h3 {
         color: #e9ecef !important;
     }
 }
-</style>
+
+/* ============================================
+   Mobile Responsive Design
+   ============================================ */
+
+/* Tablet and Mobile (max-width: 768px) */
+@media (max-width: 768px) {
+    /* Main Container - Reduce padding */
+    .main-container {
+        padding: 12px;
+    }
+    
+    /* Typography - Increase base font sizes for readability */
+    body {
+        font-size: 16px;
+    }
+    
+    h1 {
+        font-size: 28px;
+    }
+    
+    h2 {
+        font-size: 20px;
+    }
+    
+    h3 {
+        font-size: 17px;
+    }
+    
+    /* Section Spacing - Reduce margins */
+    .section-divider {
+        margin: 24px 0;
+    }
+    
+    /* Column Spacing - Reduce padding on mobile */
+    .column-spacing {
+        padding: 0 4px; /* Reduced padding for better space usage */
+    }
+    
+    /* Hexagram Display Row - Keep horizontal layout like desktop */
+    .hexagram-display-row {
+        flex-direction: row !important; /* Keep same row layout as desktop */
+        flex-wrap: nowrap !important; /* Prevent wrapping */
+        gap: 2px !important; /* Smaller gap on mobile to fit three columns */
+    }
+    
+    /* Ensure hexagram columns work well in horizontal layout on mobile */
+    .hexagram-display-row .column-spacing {
+        flex: 1 1 auto !important; /* Allow columns to flex but maintain proportions */
+        min-width: 0 !important; /* Allow shrinking if needed */
+    }
+    
+    .hexagram-display-row .column-spacing:first-child,
+    .hexagram-display-row .column-spacing:last-child {
+        align-items: stretch !important;
+    }
+    
+    .hexagram-display-row .column-spacing:first-child > *,
+    .hexagram-display-row .column-spacing:last-child > * {
+        max-width: 100% !important;
+        margin-left: 0 !important;
+    }
+    
+    /* Yao Line Buttons - Full width on mobile, shorter height, less spacing */
+    .yao-line-button {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+        font-size: 24px;
+        padding: 10px 16px;
+        min-height: 50px; /* Shorter height */
+        margin: 1px 0 !important; /* Less spacing between buttons */
+        position: relative;
+    }
+    
+    /* Match hexagram-line-container margin to yao-line-button for consistent spacing */
+    .hexagram-line-container {
+        margin: 1px 0 !important; /* Match button margin on mobile */
+    }
+    
+    /* Match hexagram-line padding and height to yao-line-button on mobile */
+    .hexagram-line {
+        padding: 10px 16px !important; /* Match button padding on mobile */
+        min-height: 50px !important; /* Match button min-height on mobile */
+    }
+    
+    /* Mobile: Show kanji instead of line symbols */
+    /* For HTML elements - show/hide symbols vs kanji */
+    .line-symbol-desktop {
+        display: none !important; /* Hide symbols on mobile */
+    }
+    .line-symbol-mobile {
+        display: inline !important; /* Show kanji on mobile */
+    }
+    
+    /* For buttons - button text format: "SYMBOL line_num爻" */
+    /* On mobile: Hide button text completely, show kanji via ::before, show line number via ::after */
+    .yao-line-button {
+        position: relative;
+        /* Hide original button text completely */
+        font-size: 0 !important;
+        color: transparent !important;
+        overflow: visible;
+    }
+    /* Show kanji and line number - kanji in ::before (large), line number in ::after (small) */
+    /* Use CSS counters for iterative line number generation (buttons are in reverse order: 6 to 1) */
+    .column-spacing { counter-reset: yao-line 7; }
+    button[id^="yao-btn-"].yao-line-button {
+        counter-increment: yao-line -1;
+    }
+    /* Kanji (陽/陰) - large font size */
+    button[id^="yao-btn-"].yao-line-button::before {
+        font-size: 24px !important; color: #ffffff !important;
+        font-family: 'SimSun', '宋体', monospace !important;
+        display: inline !important; vertical-align: middle;
+        margin-right: 4px;
+    }
+    button[id^="yao-btn-"].yang-button::before {
+        content: "陽" !important;
+    }
+    button[id^="yao-btn-"].yin-button::before {
+        content: "陰" !important;
+    }
+    /* Line number (counter + 爻) - small font size */
+    button[id^="yao-btn-"].yao-line-button::after {
+        content: counter(yao-line) "爻" !important;
+        font-size: 14px !important; color: #ffffff !important;
+        font-family: 'SimSun', '宋体', monospace !important;
+        display: inline !important; vertical-align: middle;
+        font-weight: 600 !important;
+    }
+    
+    /* Fallback: If button doesn't have ID yet, show kanji only (will be updated when ID is set) */
+    .yao-line-button.yang-button:not([id])::before {
+        content: "陽" !important;
+        font-size: 18px !important;
+        color: #ffffff !important;
+        font-family: 'SimSun', '宋体', monospace !important;
+        display: inline !important;
+        vertical-align: middle;
+    }
+    .yao-line-button.yin-button:not([id])::before {
+        content: "陰" !important;
+        font-size: 18px !important;
+        color: #ffffff !important;
+        font-family: 'SimSun', '宋体', monospace !important;
+        display: inline !important;
+        vertical-align: middle;
+    }
+    
+    /* Changing Yao Checkbox - Remove min-width constraint */
+    .changing-yao-checkbox {
+        min-width: 0 !important;
+    }
+    
+    .changing-yao-checkbox > div,
+    .changing-yao-checkbox > label,
+    .changing-yao-checkbox label {
+        font-size: 22px !important;
+        min-height: 56px !important;
+        padding: 12px 16px !important;
+        white-space: nowrap !important;
+    }
+    
+    /* Result Table - Better mobile handling */
+    .result-table {
+        font-size: 13px;
+        padding: 16px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Input Styling - Full width and touch-friendly */
+    input[type="text"], input[type="number"], select, textarea {
+        padding: 12px 14px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Button Styling - Touch-friendly sizing */
+    button.primary,
+    button.secondary {
+        padding: 14px 20px;
+        min-height: 44px; /* iOS minimum touch target */
+    }
+    
+    /* Gan-Zhi Buttons - Slightly smaller but maintain touch target */
+    .ganzhi-button {
+        min-width: 0 !important; /* Allow shrinking below 44px if needed */
+        min-height: 44px !important;
+        padding: 10px 4px; /* Reduce padding for better fit */
+        font-size: 15px;
+        margin: 0 !important; /* Remove margins, use gap instead */
+        flex: 1 1 0 !important; /* Equal growth, equal shrink, no base size */
+        max-width: calc((100% - 16px) / 5) !important; /* Constrain to fit exactly 5 per row */
+        box-sizing: border-box !important;
+    }
+    
+    /* For 地支 buttons, allow 6 per row */
+    .dizhi-button-row .ganzhi-button {
+        max-width: calc((100% - 16px) / 6) !important; /* 6 buttons per row for 地支 */
+    }
+    
+    /* Card padding reduction */
+    .card {
+        padding: 16px;
+    }
+}
+
+/* Landscape orientation on mobile devices */
+@media (max-width: 768px) and (orientation: landscape) {
+    /* Gan-Zhi Buttons - More space in landscape, better spacing */
+    .ganzhi-button {
+        padding: 12px 10px !important; /* More comfortable padding in landscape */
+        font-size: 16px !important; /* Slightly larger font for better readability */
+        min-height: 48px !important; /* Slightly taller for better touch target */
+    }
+    
+    /* Maintain 5 buttons per row for 天干, but with more comfortable spacing */
+    .gradio-row:has(.ganzhi-button) {
+        gap: 6px !important; /* Slightly larger gap in landscape */
+    }
+    
+    .gradio-row:has(.ganzhi-button) .ganzhi-button {
+        max-width: calc((100% - 24px) / 5) !important; /* Account for larger gaps */
+    }
+    
+    /* For 地支 buttons, allow 6 per row */
+    .dizhi-button-row .ganzhi-button {
+        max-width: calc((100% - 24px) / 6) !important; /* 6 buttons per row for 地支 */
+    }
+    
+    /* 地支 button rows - prevent wrapping in landscape */
+    .dizhi-button-row {
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+    }
+}
+
+/* Small Phones (max-width: 480px) - iPhone SE, iPhone 12/13 mini, etc. */
+@media (max-width: 480px) {
+    /* Main Container - Further reduce padding */
+    .main-container {
+        padding: 8px;
+    }
+    
+    /* Typography - Further adjustments for small screens */
+    h1 {
+        font-size: 24px;
+        margin-bottom: 6px;
+    }
+    
+    h2 {
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+    
+    h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+    
+    /* Section Spacing - Tighter spacing */
+    .section-divider {
+        margin: 20px 0;
+    }
+    
+    /* Column Spacing - Minimal padding on very small screens */
+    .column-spacing {
+        padding: 0 2px; /* Even less padding on very small screens */
+    }
+    
+    /* Hexagram Display Row - Keep horizontal layout, minimal gap */
+    .hexagram-display-row {
+        flex-direction: row !important; /* Keep same row layout as desktop */
+        flex-wrap: nowrap !important; /* Prevent wrapping */
+        gap: 1px !important; /* Minimal gap on very small screens */
+    }
+    
+    /* Ensure columns can shrink appropriately on very small screens */
+    .hexagram-display-row .column-spacing {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+    
+    /* Yao Line Buttons - Smaller font, maintain touch target, consistent height */
+    .yao-line-button {
+        font-size: 22px;
+        padding: 20px 12px;
+        min-height: 70px; /* Match HTML min-height for alignment */
+    }
+    
+    /* Mobile kanji for buttons on very small screens */
+    .yao-line-button.yang-button::before,
+    .yao-line-button.yin-button::before {
+        font-size: 22px;
+    }
+    
+    /* Changing Yao Checkbox - Smaller font */
+    .changing-yao-checkbox > div,
+    .changing-yao-checkbox > label,
+    .changing-yao-checkbox label {
+        font-size: 20px !important;
+        min-height: 52px !important;
+        padding: 10px 14px !important;
+        white-space: nowrap !important;
+    }
+    
+    /* Result Table - Smaller font, less padding */
+    .result-table {
+        font-size: 12px;
+        padding: 12px;
+        line-height: 1.6;
+    }
+    
+    /* Input Styling - Ensure full width */
+    input[type="text"], input[type="number"], select, textarea {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    /* Button Styling - Full width on very small screens */
+    button.primary,
+    button.secondary {
+        width: 100%;
+        padding: 14px 16px;
+    }
+    
+    /* Gan-Zhi Buttons - Maintain minimum touch target */
+    .ganzhi-button {
+        min-width: 0 !important; /* Allow shrinking if needed */
+        min-height: 44px !important;
+        padding: 8px 3px; /* Reduce padding for very small screens */
+        font-size: 14px;
+        margin: 0 !important; /* Remove margins, use gap instead */
+        flex: 1 1 0 !important; /* Equal growth, equal shrink, no base size */
+        max-width: calc((100% - 16px) / 5) !important; /* Constrain to fit exactly 5 per row */
+        box-sizing: border-box !important;
+    }
+    
+    /* For 地支 buttons, allow 6 per row */
+    .dizhi-button-row .ganzhi-button {
+        max-width: calc((100% - 16px) / 6) !important; /* 6 buttons per row for 地支 */
+    }
+    
+    /* Card padding - Minimal */
+    .card {
+        padding: 12px;
+    }
+    
+    /* Line Preview - Smaller font */
+    .line-preview {
+        font-size: 20px;
+        padding: 10px;
+    }
+    
+    /* Text muted - Better line height for small screens */
+    .text-muted {
+        font-size: 13px !important;
+        line-height: 1.5 !important;
+    }
+}
+
+/* Landscape orientation on small phones */
+@media (max-width: 480px) and (orientation: landscape) {
+    /* Gan-Zhi Buttons - More comfortable in landscape */
+    .ganzhi-button {
+        padding: 10px 8px !important; /* More padding than portrait */
+        font-size: 15px !important;
+        min-height: 46px !important;
+    }
+    
+    /* Maintain 5 buttons per row for 天干 in landscape with better spacing */
+    .gradio-row:has(.ganzhi-button) {
+        gap: 5px !important;
+    }
+    
+    .gradio-row:has(.ganzhi-button) .ganzhi-button {
+        max-width: calc((100% - 20px) / 5) !important; /* Account for gaps */
+    }
+    
+    /* For 地支 buttons, allow 6 per row */
+    .dizhi-button-row .ganzhi-button {
+        max-width: calc((100% - 20px) / 6) !important; /* 6 buttons per row for 地支 */
+    }
+}
+
+/* Ensure Gradio rows stack on mobile */
+@media (max-width: 768px) {
+    /* Target Gradio's row components to stack vertically */
+    .gradio-row {
+        flex-direction: column !important;
+    }
+    
+    /* Exception: Gan-Zhi button rows should wrap horizontally, not stack */
+    .gradio-row:has(.ganzhi-button) {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important; /* Prevent wrapping within a row - each row should keep its buttons */
+        gap: 4px !important;
+        justify-content: flex-start !important;
+        overflow: hidden !important; /* Prevent overflow */
+    }
+    
+    /* 地支 button rows - ensure 6 buttons per row without wrapping */
+    .dizhi-button-row {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important; /* Prevent wrapping - keep 6 buttons per row */
+        gap: 4px !important;
+        justify-content: flex-start !important;
+        overflow: hidden !important; /* Prevent overflow */
+    }
+    
+    /* Gan-Zhi buttons should not take full width - use fixed flex basis for even distribution */
+    .gradio-row:has(.ganzhi-button) > * {
+        width: auto !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Ensure ganzhi buttons in rows have proper sizing */
+    .gradio-row:has(.ganzhi-button) .ganzhi-button {
+        margin: 0 !important; /* Remove margins, use gap instead */
+        flex: 1 1 0 !important; /* Equal growth, equal shrink, no base size */
+        max-width: calc((100% - 16px) / 5) !important; /* Constrain to fit exactly 5 per row */
+    }
+    
+    /* For 地支 buttons, allow 6 per row */
+    .dizhi-button-row .ganzhi-button {
+        max-width: calc((100% - 16px) / 6) !important; /* 6 buttons per row for 地支 */
+    }
+    
+    /* Date input row - stack vertically on mobile */
+    .gradio-row > * {
+        width: 100% !important;
+        margin-bottom: 8px;
+    }
+    
+    /* Hide desktop number inputs on mobile, show mobile HTML5 inputs */
+    .desktop-date-inputs {
+        display: none !important;
+    }
+    
+    .mobile-date-time-inputs {
+        display: block !important;
+    }
+    
+    .mobile-date-time-wrapper {
+        display: block !important;
+    }
+}
+
+/* Desktop: show number inputs, hide mobile HTML5 inputs */
+@media (min-width: 769px) {
+    .desktop-date-inputs {
+        display: flex !important;
+    }
+    
+    .mobile-date-time-inputs {
+        display: none !important;
+    }
+    
+    .mobile-date-time-wrapper {
+        display: none !important;
+    }
+}
+
+/* Very small screens - 2x2 grid for date inputs if needed */
+@media (max-width: 480px) and (min-width: 361px) {
+    /* Allow some flexibility for date inputs on very small screens */
+    .gradio-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    
+    /* Exception: Gan-Zhi button rows should use flexbox, not grid */
+    .gradio-row:has(.ganzhi-button) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+    }
+    
+    /* 地支 button rows - prevent wrapping to maintain 6 buttons per row */
+    .dizhi-button-row {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 4px !important;
+    }
+}
+
+/* Smallest screens - Force single column */
+@media (max-width: 360px) {
+    .gradio-row {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Exception: Gan-Zhi button rows should still wrap horizontally */
+    .gradio-row:has(.ganzhi-button) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        grid-template-columns: none !important;
+        gap: 3px !important;
+    }
+    
+    /* 地支 button rows - prevent wrapping to maintain 6 buttons per row */
+    .dizhi-button-row {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        grid-template-columns: none !important;
+        gap: 3px !important;
+    }
+}

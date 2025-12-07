@@ -306,9 +306,212 @@ if (document.readyState === 'loading') {
         });
     });
 } else {
-    ganzhiObserver.observe(document.body, {
+        ganzhiObserver.observe(document.body, {
         childList: true,
         subtree: true
     });
 }
-</script>
+
+// Screen width detection for responsive formatting
+function updateScreenWidth() {
+    const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    // Store in a data attribute on body for easy access
+    document.body.setAttribute('data-screen-width', width);
+    // Also try to update via Gradio if available
+    if (window.gradio_config && window.updateScreenWidthState) {
+        window.updateScreenWidthState(width);
+    }
+}
+
+// Update on load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateScreenWidth);
+} else {
+    updateScreenWidth();
+}
+
+// Update on resize (with debounce)
+let resizeTimeout;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(updateScreenWidth, 100);
+});
+
+// Also update when Gradio is ready
+if (window.gradio_config) {
+    setTimeout(updateScreenWidth, 500);
+    setTimeout(updateScreenWidth, 1000);
+}
+
+// Sync HTML5 date/time inputs with Gradio number inputs
+function setupMobileDateInputs() {
+    const dateInput = document.getElementById('mobile-date-input');
+    const timeInput = document.getElementById('mobile-time-input');
+    
+    if (!dateInput || !timeInput) {
+        return;
+    }
+    
+    // Find the corresponding Gradio number inputs
+    // Look for inputs in the desktop-date-inputs row
+    const findNumberInputs = () => {
+        const desktopRow = document.querySelector('.desktop-date-inputs');
+        if (!desktopRow) {
+            return {};
+        }
+        
+        const numberInputs = {};
+        const inputs = desktopRow.querySelectorAll('input[type="number"]');
+        
+        // Try to find inputs by their position or by looking for nearby labels
+        inputs.forEach((input, index) => {
+            // Try multiple methods to find the label
+            let label = null;
+            
+            // Method 1: Look for label in the same container
+            const container = input.closest('.form, .block, [class*="container"]');
+            if (container) {
+                label = container.querySelector('label');
+            }
+            
+            // Method 2: Look for label before the input
+            if (!label) {
+                let prev = input.previousElementSibling;
+                while (prev && !label) {
+                    if (prev.tagName === 'LABEL') {
+                        label = prev;
+                    }
+                    prev = prev.previousElementSibling;
+                }
+            }
+            
+            // Method 3: Look for label after the input
+            if (!label) {
+                let next = input.nextElementSibling;
+                while (next && next.tagName !== 'INPUT' && !label) {
+                    if (next.tagName === 'LABEL') {
+                        label = next;
+                    }
+                    next = next.nextElementSibling;
+                }
+            }
+            
+            // Method 4: Look for label by searching parent
+            if (!label) {
+                const parent = input.parentElement;
+                if (parent) {
+                    label = parent.querySelector('label');
+                }
+            }
+            
+            if (label) {
+                const labelText = label.textContent.trim();
+                if (labelText === '年' || labelText.includes('年')) {
+                    numberInputs.year = input;
+                } else if (labelText === '月' || labelText.includes('月')) {
+                    numberInputs.month = input;
+                } else if (labelText === '日' || labelText.includes('日')) {
+                    numberInputs.day = input;
+                } else if (labelText === '時' || labelText.includes('時')) {
+                    numberInputs.hour = input;
+                }
+            } else {
+                // Fallback: assign by index (year, month, day, hour)
+                if (index === 0) numberInputs.year = input;
+                else if (index === 1) numberInputs.month = input;
+                else if (index === 2) numberInputs.day = input;
+                else if (index === 3) numberInputs.hour = input;
+            }
+        });
+        
+        return numberInputs;
+    };
+    
+    const syncToNumbers = () => {
+        const numberInputs = findNumberInputs();
+        
+        if (dateInput.value && Object.keys(numberInputs).length >= 3) {
+            const dateParts = dateInput.value.split('-');
+            if (dateParts.length === 3) {
+                if (numberInputs.year) {
+                    numberInputs.year.value = dateParts[0];
+                    // Trigger Gradio's change event
+                    numberInputs.year.dispatchEvent(new Event('input', { bubbles: true }));
+                    numberInputs.year.dispatchEvent(new Event('change', { bubbles: true }));
+                    // Also try focus/blur to trigger updates
+                    numberInputs.year.focus();
+                    numberInputs.year.blur();
+                }
+                if (numberInputs.month) {
+                    numberInputs.month.value = dateParts[1];
+                    numberInputs.month.dispatchEvent(new Event('input', { bubbles: true }));
+                    numberInputs.month.dispatchEvent(new Event('change', { bubbles: true }));
+                    numberInputs.month.focus();
+                    numberInputs.month.blur();
+                }
+                if (numberInputs.day) {
+                    numberInputs.day.value = dateParts[2];
+                    numberInputs.day.dispatchEvent(new Event('input', { bubbles: true }));
+                    numberInputs.day.dispatchEvent(new Event('change', { bubbles: true }));
+                    numberInputs.day.focus();
+                    numberInputs.day.blur();
+                }
+            }
+        }
+        
+        if (timeInput.value && numberInputs.hour) {
+            const timeParts = timeInput.value.split(':');
+            if (timeParts.length >= 1) {
+                numberInputs.hour.value = timeParts[0];
+                numberInputs.hour.dispatchEvent(new Event('input', { bubbles: true }));
+                numberInputs.hour.dispatchEvent(new Event('change', { bubbles: true }));
+                numberInputs.hour.focus();
+                numberInputs.hour.blur();
+            }
+        }
+    };
+    
+    // Sync when HTML5 inputs change
+    dateInput.addEventListener('change', syncToNumbers);
+    timeInput.addEventListener('change', syncToNumbers);
+    dateInput.addEventListener('input', syncToNumbers);
+    timeInput.addEventListener('input', syncToNumbers);
+}
+
+// Run setup on page load and after Gradio updates
+function initMobileDateInputs() {
+    setupMobileDateInputs();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        initMobileDateInputs();
+        setTimeout(initMobileDateInputs, 500);
+        setTimeout(initMobileDateInputs, 1000);
+    });
+} else {
+    initMobileDateInputs();
+    setTimeout(initMobileDateInputs, 500);
+    setTimeout(initMobileDateInputs, 1000);
+}
+
+// Also run after Gradio updates
+let mobileDateTimeout;
+const mobileDateObserver = new MutationObserver(function(mutations) {
+    clearTimeout(mobileDateTimeout);
+    mobileDateTimeout = setTimeout(initMobileDateInputs, 200);
+});
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        mobileDateObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+} else {
+    mobileDateObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+}
