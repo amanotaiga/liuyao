@@ -1558,6 +1558,16 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                 change_mark = "×"
         
         # Build marker parts for 本卦
+        # 標記優先順序說明：
+        # 1. 月破 - 最高優先級（月建沖破）
+        # 2. 旬空 - 獨立標記，不與其他衝突
+        # 3. 日沖系列（暗動/日破/日沖）- 優先於日扶、日克
+        # 4. 月合系列（月生合/月克合/月平合/月合）- 獨立標記
+        # 5. 日合系列（日生合/日克合/日合）- 優先於日生、日克
+        # 6. 臨日 - 獨立標記
+        # 7. 日扶 - 需排除日沖（日沖優先）
+        # 8. 日生 - 需排除日生合（日生合優先）
+        # 9. 日克 - 需排除日克合和日沖（日克合優先，日沖優先）
         marker_parts = []
         if main_shi_ying!="":
             marker_parts.append(main_shi_ying)
@@ -1570,10 +1580,13 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                     marker_parts.append(yao.wang_shuai)
             else:
                 marker_parts.append(yao.wang_shuai)
+        # 1. 月破（最高優先級）
         if yao.yue_peng:
             marker_parts.append("月破")
+        # 2. 旬空（獨立標記）
         if yao.xun_kong:
             marker_parts.append("旬空")
+        # 3. 日沖系列（優先於日扶、日克）
         if yao.ri_chong:
             if yao.an_dong:
                 marker_parts.append("暗動")
@@ -1581,6 +1594,7 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                 marker_parts.append("日破")
             else:
                 marker_parts.append("日沖")
+        # 4. 月合系列（獨立標記）
         if yao.yue_he:
             if yao.yue_he == "生合":
                 marker_parts.append("月生合")
@@ -1590,6 +1604,7 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                 marker_parts.append("月平合")
             else:
                 marker_parts.append("月合")
+        # 5. 日合系列（優先於日生、日克）
         if yao.ri_he:
             if yao.ri_he == "生合":
                 marker_parts.append("日生合")
@@ -1597,13 +1612,16 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                 marker_parts.append("日克合")
             else:
                 marker_parts.append("日合")
+        # 6. 臨日（獨立標記）
         if yao.lin_ri:
             marker_parts.append("臨日")
+        # 7. 日扶（需排除日沖：日沖優先）
         if yao.ri_fu and not yao.ri_chong:
             marker_parts.append("日扶")
-        if yao.ri_sheng:
+        # 8. 日生（需排除日生合：日生合優先）
+        if yao.ri_sheng and yao.ri_he != "生合":
             marker_parts.append("日生")
-        # 日克 only if not 日沖 (日沖優先)
+        # 9. 日克（需排除日克合和日沖：日克合優先，日沖優先）
         if yao.ri_ke and yao.ri_he != "克合" and not yao.ri_chong:
             marker_parts.append("日克")
         
@@ -1650,11 +1668,24 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                     changed_marker_parts.append(marker)
             
             # Add 變卦的日月關係 (only for changing lines)
+            # 標記優先順序說明：
+            # 1. 月破 - 最高優先級（月建沖破）
+            # 2. 旬空 - 獨立標記，不與其他衝突
+            # 3. 日沖系列（暗動/日破/日沖）- 優先於日扶、日克
+            # 4. 月合系列（月生合/月克合/月平合/月合）- 獨立標記
+            # 5. 日合系列（日生合/日克合/日合）- 優先於日生、日克
+            # 6. 臨日 - 獨立標記
+            # 7. 日扶 - 需排除日沖（日沖優先）
+            # 8. 日生 - 需排除日生合（日生合優先）
+            # 9. 日克 - 需排除日克合和日沖（日克合優先，日沖優先）
             if yao.is_changing:
+                # 1. 月破（最高優先級）
                 if yao.changed_yue_peng:
                     changed_marker_parts.append("月破")
+                # 2. 旬空（獨立標記）
                 if yao.changed_xun_kong:
                     changed_marker_parts.append("旬空")
+                # 3. 日沖系列（優先於日扶、日克）
                 if yao.changed_ri_chong:
                     if yao.changed_an_dong:
                         changed_marker_parts.append("暗動")
@@ -1662,6 +1693,7 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                         changed_marker_parts.append("日破")
                     else:
                         changed_marker_parts.append("日沖")
+                # 4. 月合系列（獨立標記）
                 if yao.changed_yue_he:
                     if yao.changed_yue_he == "生合":
                         changed_marker_parts.append("月生合")
@@ -1671,6 +1703,7 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                         changed_marker_parts.append("月平合")
                     else:
                         changed_marker_parts.append("月合")
+                # 5. 日合系列（優先於日生、日克）
                 if yao.changed_ri_he:
                     if yao.changed_ri_he == "生合":
                         changed_marker_parts.append("日生合")
@@ -1678,13 +1711,16 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                         changed_marker_parts.append("日克合")
                     else:
                         changed_marker_parts.append("日合")
+                # 6. 臨日（獨立標記）
                 if yao.changed_lin_ri:
                     changed_marker_parts.append("臨日")
+                # 7. 日扶（需排除日沖：日沖優先）
                 if yao.changed_ri_fu and not yao.changed_ri_chong:
                     changed_marker_parts.append("日扶")
-                if yao.changed_ri_sheng:
+                # 8. 日生（需排除日生合：日生合優先）
+                if yao.changed_ri_sheng and yao.changed_ri_he != "生合":
                     changed_marker_parts.append("日生")
-                # 日克 only if not 日沖 (日沖優先)
+                # 9. 日克（需排除日克合和日沖：日克合優先，日沖優先）
                 if yao.changed_ri_ke and yao.changed_ri_he != "克合" and not yao.changed_ri_chong:
                     changed_marker_parts.append("日克")
             
@@ -1810,6 +1846,16 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
                 change_mark = "×"
         
         # Build marker parts for 本卦
+        # 標記優先順序說明：
+        # 1. 月破 - 最高優先級（月建沖破）
+        # 2. 旬空 - 獨立標記，不與其他衝突
+        # 3. 日沖系列（暗動/日破/日沖）- 優先於日扶、日克
+        # 4. 月合系列（月生合/月克合/月平合/月合）- 獨立標記
+        # 5. 日合系列（日生合/日克合/日無平合）- 優先於日生、日克
+        # 6. 臨日 - 獨立標記
+        # 7. 日扶 - 需排除日沖（日沖優先）
+        # 8. 日生 - 需排除日生合（日生合優先）
+        # 9. 日克 - 需排除日克合和日沖（日克合優先，日沖優先）
         marker_parts = []
         if main_shi_ying!="":
             marker_parts.append(main_shi_ying)
@@ -1822,10 +1868,13 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
                     marker_parts.append(yao.wang_shuai)
             else:
                 marker_parts.append(yao.wang_shuai)
+        # 1. 月破（最高優先級）
         if yao.yue_peng:
             marker_parts.append("月破")
+        # 2. 旬空（獨立標記）
         if yao.xun_kong:
             marker_parts.append("旬空")  
+        # 3. 日沖系列（優先於日扶、日克）
         if yao.ri_chong:
             if yao.an_dong:
                 marker_parts.append("暗動")
@@ -1833,6 +1882,7 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
                 marker_parts.append("日破")
             else:
                 marker_parts.append("日沖")
+        # 4. 月合系列（獨立標記）
         if yao.yue_he:
             if yao.yue_he == "生合":
                 marker_parts.append("月生合")  
@@ -1842,6 +1892,7 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
                 marker_parts.append("月平合")  
             else:
                 marker_parts.append("月合")  
+        # 5. 日合系列（優先於日生、日克）
         if yao.ri_he:
             if yao.ri_he == "生合":
                 marker_parts.append("日生合")  
@@ -1849,13 +1900,16 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
                 marker_parts.append("日克合")  
             else:
                 marker_parts.append("日無平合")  
+        # 6. 臨日（獨立標記）
         if yao.lin_ri:
             marker_parts.append("臨日")
+        # 7. 日扶（需排除日沖：日沖優先）
         if yao.ri_fu and not yao.ri_chong:
             marker_parts.append("日扶")
-        if yao.ri_sheng:
+        # 8. 日生（需排除日生合：日生合優先）
+        if yao.ri_sheng and yao.ri_he != "生合":
             marker_parts.append("日生")
-        # 日克 only if not 日沖 (日沖優先)
+        # 9. 日克（需排除日克合和日沖：日克合優先，日沖優先）
         if yao.ri_ke and yao.ri_he != "克合" and not yao.ri_chong:
             marker_parts.append("日克")  
         
@@ -1920,13 +1974,26 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
             for marker in yao.shen_sha_markers:
                 if marker in ["化進神", "化退神", "回頭生", "回頭克"]:
                     changed_marker_parts.append(marker)
-            
-            # Add 變卦的日月關係 (only for changing lines) - simplified
+
+            # Add 變卦的日月關係 (only for changing lines)
+            # 標記優先順序說明：
+            # 1. 月破 - 最高優先級（月建沖破）
+            # 2. 旬空 - 獨立標記，不與其他衝突
+            # 3. 日沖系列（暗動/日破/日沖）- 優先於日扶、日克
+            # 4. 月合系列（生合/克合/平合/合）- 獨立標記
+            # 5. 日合系列（生合/克合/日無平合）- 優先於日生、日克
+            # 6. 臨日 - 獨立標記
+            # 7. 日扶 - 需排除日沖（日沖優先）
+            # 8. 日生 - 需排除日生合（日生合優先）
+            # 9. 日克 - 需排除日克合和日沖（日克合優先，日沖優先）
             if yao.is_changing:
+                # 1. 月破（最高優先級）
                 if yao.changed_yue_peng:
                     changed_marker_parts.append("月破")
+                # 2. 旬空（獨立標記）
                 if yao.changed_xun_kong:
                     changed_marker_parts.append("旬空")  
+                # 3. 日沖系列（優先於日扶、日克）
                 if yao.changed_ri_chong:
                     if yao.changed_an_dong:
                         changed_marker_parts.append("暗動")
@@ -1934,6 +2001,7 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
                         changed_marker_parts.append("日破")
                     else:
                         changed_marker_parts.append("日沖")
+                # 4. 月合系列（獨立標記）
                 if yao.changed_yue_he:
                     if yao.changed_yue_he == "生合":
                         changed_marker_parts.append("生合") 
@@ -1943,6 +2011,7 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
                         changed_marker_parts.append("平合")  
                     else:
                         changed_marker_parts.append("合")  
+                # 5. 日合系列（優先於日生、日克）
                 if yao.changed_ri_he:
                     if yao.changed_ri_he == "生合":
                         changed_marker_parts.append("生合") 
@@ -1950,13 +2019,16 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
                         changed_marker_parts.append("克合")  
                     else:
                         changed_marker_parts.append("日無平合") 
+                # 6. 臨日（獨立標記）
                 if yao.changed_lin_ri:
                     changed_marker_parts.append("臨日")
+                # 7. 日扶（需排除日沖：日沖優先）
                 if yao.changed_ri_fu and not yao.changed_ri_chong:
                     changed_marker_parts.append("日扶")
-                if yao.changed_ri_sheng:
+                # 8. 日生（需排除日生合：日生合優先）
+                if yao.changed_ri_sheng and yao.changed_ri_he != "生合":
                     changed_marker_parts.append("日生")
-                # 日克 only if not 日沖 (日沖優先)
+                # 9. 日克（需排除日克合和日沖：日克合優先，日沖優先）
                 if yao.changed_ri_ke and yao.changed_ri_he != "克合" and not yao.changed_ri_chong:
                     changed_marker_parts.append("日克")  
             
