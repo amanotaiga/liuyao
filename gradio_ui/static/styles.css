@@ -1410,3 +1410,76 @@ button.coin-yin.coin-outcome-selected:hover {
         gap: 2px !important;
     }
 }
+
+/* Usage Instructions Accordion Styling */
+.usage-instructions {
+    margin-bottom: 16px;
+}
+
+.usage-instructions .gradio-accordion {
+    border: 1.5px solid #e9ecef;
+    border-radius: 8px;
+    background-color: #ffffff;
+    margin-bottom: 16px;
+}
+
+.usage-instructions .gradio-accordion-header {
+    padding: 14px 16px;
+    font-weight: 600;
+    font-size: 16px;
+    color: #000000;
+    background-color: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+    transition: background-color 0.2s ease;
+}
+
+.usage-instructions .gradio-accordion-header:hover {
+    background-color: #e9ecef;
+}
+
+.usage-instructions .gradio-accordion-content {
+    padding: 20px;
+    line-height: 1.8;
+    color: #333333;
+}
+
+.usage-instructions .gradio-accordion-content h3 {
+    margin-top: 24px;
+    margin-bottom: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #000000;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 8px;
+}
+
+.usage-instructions .gradio-accordion-content h3:first-child {
+    margin-top: 0;
+}
+
+.usage-instructions .gradio-accordion-content p {
+    margin-bottom: 12px;
+    line-height: 1.8;
+}
+
+.usage-instructions .gradio-accordion-content ul,
+.usage-instructions .gradio-accordion-content ol {
+    margin-left: 20px;
+    margin-bottom: 16px;
+    line-height: 1.8;
+}
+
+.usage-instructions .gradio-accordion-content li {
+    margin-bottom: 8px;
+}
+
+.usage-instructions .gradio-accordion-content strong {
+    color: #000000;
+    font-weight: 600;
+}
+
+.usage-instructions .gradio-accordion-content hr {
+    margin: 20px 0;
+    border: none;
+    border-top: 1px solid #e9ecef;
+}
