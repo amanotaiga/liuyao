@@ -8,11 +8,21 @@ This module contains reusable components for date input:
 
 from dataclasses import dataclass
 from typing import Tuple, Callable
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import gradio as gr
 
-from ..config import HEAVENLY_STEMS, EARTHLY_BRANCHES, MIN_YEAR, MAX_YEAR, PILLAR_LABELS
+from ..config import HEAVENLY_STEMS, EARTHLY_BRANCHES, MIN_YEAR, MAX_YEAR, PILLAR_LABELS, USE_JAPAN_TIME
+
+
+def get_current_datetime():
+    """Get current datetime, using Japan time if configured, otherwise system time"""
+    if USE_JAPAN_TIME:
+        # JST is UTC+9
+        jst = timezone(timedelta(hours=9))
+        return datetime.now(jst)
+    else:
+        return datetime.now()
 
 
 @dataclass
@@ -69,7 +79,7 @@ def create_western_calendar_tab(active_tab_state: gr.State) -> Tuple[WesternDate
     )
     
     # Get current date/time
-    now = datetime.now()
+    now = get_current_datetime()
     
     # Format date and time for HTML5 inputs
     date_str = now.strftime("%Y-%m-%d")
@@ -169,7 +179,7 @@ def create_western_calendar_tab(active_tab_state: gr.State) -> Tuple[WesternDate
                 """
             except Exception:
                 # Return current date/time on error
-                now = datetime.now()
+                now = get_current_datetime()
                 date_str = now.strftime("%Y-%m-%d")
                 time_str = now.strftime("%H:00")
                 return f"""

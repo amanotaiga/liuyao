@@ -8,6 +8,9 @@ used throughout the Gradio interface.
 from typing import List, Dict
 from dataclasses import dataclass
 
+# Timezone configuration
+USE_JAPAN_TIME: bool = True  # Set to True to use Japan time (JST), False to use system time
+
 
 # Gan-Zhi (干支) constants
 HEAVENLY_STEMS: List[str] = [
