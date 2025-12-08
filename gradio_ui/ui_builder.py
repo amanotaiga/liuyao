@@ -157,6 +157,72 @@ def create_process_clickable_tab_handler(
     return process_clickable_tab
 
 
+def create_process_coin_toss_tab_handler(
+    date_inputs,
+    hexagram_inputs,
+    result_display
+):
+    """
+    Create handler function for coin toss tab calculation button
+    
+    Args:
+        date_inputs: DateInputComponents instance
+        hexagram_inputs: HexagramInputComponents instance
+        result_display: ResultDisplay instance
+        
+    Returns:
+        Handler function for process_coin_toss_tab
+    """
+    def process_coin_toss_tab(
+        year, month, day, hour,
+        year_pillar_str, month_pillar_str, day_pillar_str, hour_pillar_str,
+        active_date_tab,
+        coin_toss_hexagram_code,
+        coin_toss_yao1_changing, coin_toss_yao2_changing, coin_toss_yao3_changing,
+        coin_toss_yao4_changing, coin_toss_yao5_changing, coin_toss_yao6_changing,
+        compact_view
+    ):
+        """Process divination for coin toss tab"""
+        # Determine which date method to use based on active tab
+        # Use ganzhi if active tab is "ganzhi" AND all pillars are filled
+        if active_date_tab == "ganzhi" and year_pillar_str and month_pillar_str and day_pillar_str and hour_pillar_str:
+            use_western = False
+        else:
+            use_western = True
+        
+        # Get hexagram code from coin toss tab
+        code = coin_toss_hexagram_code if (
+            coin_toss_hexagram_code and 
+            len(coin_toss_hexagram_code) == 6 and 
+            coin_toss_hexagram_code in HEXAGRAM_MAP
+        ) else "111111"
+        
+        # Map checkboxes to changing lines
+        changing_1 = bool(coin_toss_yao1_changing) if coin_toss_yao1_changing is not None else False
+        changing_2 = bool(coin_toss_yao2_changing) if coin_toss_yao2_changing is not None else False
+        changing_3 = bool(coin_toss_yao3_changing) if coin_toss_yao3_changing is not None else False
+        changing_4 = bool(coin_toss_yao4_changing) if coin_toss_yao4_changing is not None else False
+        changing_5 = bool(coin_toss_yao5_changing) if coin_toss_yao5_changing is not None else False
+        changing_6 = bool(coin_toss_yao6_changing) if coin_toss_yao6_changing is not None else False
+        
+        with_prompt, without_prompt = process_divination_for_ui(
+            use_western,
+            year, month, day, hour,
+            year_pillar_str, "", month_pillar_str, "",
+            day_pillar_str, "", hour_pillar_str, "",
+            False,  # use_button_method
+            "陽", False, "陽", False, "陽", False,
+            "陽", False, "陽", False, "陽", False,
+            "", code,
+            changing_1, changing_2, changing_3, changing_4, changing_5, changing_6,
+            is_mobile=bool(compact_view)
+        )
+        # Return with_prompt for display, without_prompt for copy
+        return with_prompt, without_prompt
+    
+    return process_coin_toss_tab
+
+
 def create_ui():
     """
     Create and return the Gradio interface
@@ -256,6 +322,37 @@ def create_ui():
                 hexagram_inputs.clickable.clickable_changing_state_vars[4],  # 5爻
                 hexagram_inputs.clickable.clickable_changing_state_vars[5],  # 6爻
                 hexagram_inputs.clickable.compact_view_checkbox,
+            ],
+            outputs=[result_display.result_table, result_display.result_table_without_prompt]
+        )
+        
+        # Coin toss tab button
+        process_coin_toss_tab_fn = create_process_coin_toss_tab_handler(
+            date_inputs,
+            hexagram_inputs,
+            result_display
+        )
+        
+        hexagram_inputs.coin_toss.calculate_btn.click(
+            fn=process_coin_toss_tab_fn,
+            inputs=[
+                date_inputs.western.year_dropdown,
+                date_inputs.western.month_dropdown,
+                date_inputs.western.day_dropdown,
+                date_inputs.western.hour_dropdown,
+                date_inputs.ganzhi.year_pillar_state,
+                date_inputs.ganzhi.month_pillar_state,
+                date_inputs.ganzhi.day_pillar_state,
+                date_inputs.ganzhi.hour_pillar_state,
+                date_inputs.active_date_tab_state,
+                hexagram_inputs.coin_toss.coin_toss_hexagram_code_state,
+                hexagram_inputs.coin_toss.coin_toss_changing_state_vars[0],  # 1爻
+                hexagram_inputs.coin_toss.coin_toss_changing_state_vars[1],  # 2爻
+                hexagram_inputs.coin_toss.coin_toss_changing_state_vars[2],  # 3爻
+                hexagram_inputs.coin_toss.coin_toss_changing_state_vars[3],  # 4爻
+                hexagram_inputs.coin_toss.coin_toss_changing_state_vars[4],  # 5爻
+                hexagram_inputs.coin_toss.coin_toss_changing_state_vars[5],  # 6爻
+                hexagram_inputs.coin_toss.compact_view_checkbox,
             ],
             outputs=[result_display.result_table, result_display.result_table_without_prompt]
         )

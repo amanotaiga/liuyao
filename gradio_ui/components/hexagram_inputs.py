@@ -52,10 +52,22 @@ class ClickableHexagramInputs:
 
 
 @dataclass
+class CoinTossHexagramInputs:
+    """Components for coin toss input tab"""
+    coin_toss_hexagram_code_state: gr.State
+    coin_toss_changing_state_vars: List[gr.State]  # 6 state variables
+    outcome_buttons: List[List[gr.Button]]  # 6 lines × 4 outcome buttons per line
+    selected_outcome_states: List[gr.State]  # 6 state variables (0-3 for each line)
+    calculate_btn: gr.Button
+    compact_view_checkbox: gr.Checkbox
+
+
+@dataclass
 class HexagramInputComponents:
     """Container for all hexagram input components"""
     name_search: NameSearchHexagramInputs
     clickable: ClickableHexagramInputs
+    coin_toss: CoinTossHexagramInputs
     hexagram_tabs: gr.Tabs
 
 
@@ -691,9 +703,268 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
     return clickable_inputs, setup_handlers
 
 
+def coin_states_to_hexagram_code(coin_states: List[List[bool]]) -> Tuple[str, List[int]]:
+    """
+    Convert coin states to hexagram code and changing lines
+    
+    Args:
+        coin_states: List of 6 lines, each containing 3 boolean values (True=heads, False=tails)
+        coin_states[0] = line 1 (bottom), coin_states[5] = line 6 (top)
+    
+    Returns:
+        Tuple of (hexagram_code, changing_line_numbers)
+        hexagram_code is a 6-character string of '0' and '1'
+        changing_line_numbers is a list of line numbers (1-6) that are changing
+    """
+    hexagram_code = ""
+    changing_lines = []
+    
+    for line_index, coins in enumerate(coin_states):
+        line_num = line_index + 1  # 1-6
+        heads_count = sum(coins)  # Count True values (heads)
+        
+        # Determine yin/yang based on coin count
+        # 3 heads or 2 heads 1 tail → yang ("1")
+        # 1 head 2 tails or 3 tails → yin ("0")
+        if heads_count >= 2:
+            hexagram_code += "1"  # yang
+        else:
+            hexagram_code += "0"  # yin
+        
+        # Determine if changing based on coin count
+        # 3 heads or 3 tails → is_changing=True
+        if heads_count == 3 or heads_count == 0:
+            changing_lines.append(line_num)
+    
+    return hexagram_code, changing_lines
+
+
+def create_coin_toss_tab() -> Tuple[CoinTossHexagramInputs, Callable]:
+    """
+    Create the coin toss input tab with all handlers
+    
+    Returns:
+        Tuple of (CoinTossHexagramInputs, setup_handlers function)
+    """
+    gr.Markdown("### 新手擲幣", elem_classes=["section-header"])
+    gr.Markdown(
+        "<p style='color: #868e96; font-size: 13px; margin-top: -6px; margin-bottom: 12px;'>選擇每爻的擲幣結果：正正正、正正反、正反反、或反反反。數字為正面，圖案為反面。</p>",
+        elem_classes=["text-muted"]
+    )
+    
+    # Store hexagram code state
+    coin_toss_hexagram_code_state = gr.State(value=DEFAULT_HEXAGRAM_CODE)
+    
+    # Store changing lines state (for checkboxes)
+    coin_toss_changing_state_1 = gr.State(value=False)  # 1爻
+    coin_toss_changing_state_2 = gr.State(value=False)  # 2爻
+    coin_toss_changing_state_3 = gr.State(value=False)  # 3爻
+    coin_toss_changing_state_4 = gr.State(value=False)  # 4爻
+    coin_toss_changing_state_5 = gr.State(value=False)  # 5爻
+    coin_toss_changing_state_6 = gr.State(value=False)  # 6爻
+    coin_toss_changing_state_vars = [
+        coin_toss_changing_state_1,
+        coin_toss_changing_state_2,
+        coin_toss_changing_state_3,
+        coin_toss_changing_state_4,
+        coin_toss_changing_state_5,
+        coin_toss_changing_state_6
+    ]
+    
+    # Store selected outcome for each line (0-3: 正正正, 正正反, 正反反, 反反反)
+    # Visual order: line 1, 2, 3, 4, 5, 6 (top to bottom) - reversed for beginners
+    selected_outcome_states = []
+    for line_num in range(1, 7):  # Visual order: 1 to 6 (reversed)
+        outcome_state = gr.State(value=0)  # Default to 正正正 (0)
+        selected_outcome_states.append(outcome_state)
+    
+    # Create outcome buttons section
+    # Display order: line 1 at top, line 6 at bottom (reversed for beginners)
+    outcome_buttons = []  # List of lists: 6 lines × 4 outcome buttons (visual order: 1 to 6)
+    outcome_labels = ["正正正", "正正反", "正反反", "反反反"]
+    
+    for line_num in range(1, 7):  # Display from 1 to 6 (top to bottom) - reversed for beginners
+        with gr.Row(elem_classes=["coin-toss-line"]):
+            with gr.Column(scale=0, elem_classes=["coin-line-label"]):
+                gr.Markdown(f"**丟第{line_num}次的結果**")
+            
+            line_outcome_buttons = []
+            
+            # Create 4 outcome buttons for this line
+            with gr.Row(scale=1, elem_classes=["coin-outcome-row"]):
+                for outcome_idx in range(4):
+                    # Set default selected state for first button (正正正)
+                    button_classes = ["coin-outcome-button"]
+                    if outcome_idx == 0:  # Default to 正正正
+                        button_classes.extend(["coin-outcome-selected", "coin-yang"])
+                    
+                    outcome_btn = gr.Button(
+                        outcome_labels[outcome_idx],
+                        size="sm",
+                        elem_classes=button_classes,
+                        scale=1,
+                        min_width=50
+                    )
+                    line_outcome_buttons.append(outcome_btn)
+            
+            outcome_buttons.append(line_outcome_buttons)
+    
+    # Function to convert outcome index to coin states
+    def outcome_to_coin_states(outcome_idx):
+        """Convert outcome index (0-3) to coin states (3 booleans)
+        
+        Args:
+            outcome_idx: 0=正正正, 1=正正反, 2=正反反, 3=反反反
+        
+        Returns:
+            List of 3 booleans (True=heads/正, False=tails/反)
+        """
+        if outcome_idx == 0:  # 正正正
+            return [True, True, True]
+        elif outcome_idx == 1:  # 正正反
+            return [True, True, False]
+        elif outcome_idx == 2:  # 正反反
+            return [True, False, False]
+        else:  # outcome_idx == 3: 反反反
+            return [False, False, False]
+    
+    # Function to update hexagram code based on selected outcomes
+    def update_coin_toss_display(*outcome_indices):
+        """Update hexagram code when outcome selections change
+        
+        Args:
+            *outcome_indices: 6 outcome indices (0-3) in visual order: line1, line2, ..., line6
+        
+        Returns:
+            Updates for hexagram code and changing states
+        """
+        # Convert outcomes to coin states (in visual order: 1,2,3,4,5,6)
+        coin_states_by_line = []
+        for outcome_idx in outcome_indices:
+            coin_states = outcome_to_coin_states(outcome_idx)
+            coin_states_by_line.append(coin_states)
+        
+        # Convert to hexagram code (visual order is already 1,2,3,4,5,6, so no need to reverse)
+        hexagram_code, changing_lines = coin_states_to_hexagram_code(coin_states_by_line)
+        
+        # Update changing state variables
+        changing_state_updates = []
+        for line_num in range(1, 7):
+            is_changing = line_num in changing_lines
+            changing_state_updates.append(is_changing)
+        
+        return (
+            hexagram_code,  # hexagram code state
+            *changing_state_updates  # 6 changing state variables
+        )
+    
+    # Function to determine if outcome is yang or yin
+    def outcome_is_yang(outcome_idx):
+        """Determine if outcome represents yang (陽) or yin (陰)
+        
+        Args:
+            outcome_idx: 0=正正正, 1=正正反, 2=正反反, 3=反反反
+        
+        Returns:
+            True for yang (陽), False for yin (陰)
+        """
+        # 正正正 (3 heads) or 正正反 (2 heads 1 tail) → yang
+        # 正反反 (1 head 2 tails) or 反反反 (3 tails) → yin
+        return outcome_idx <= 1
+    
+    # Function to handle outcome button click
+    def handle_outcome_click(visual_line_index, outcome_idx, *all_outcome_indices):
+        """Handle click on an outcome button
+        
+        Args:
+            visual_line_index: Visual line index (0=line1, 5=line6) - reversed order
+            outcome_idx: Outcome index (0-3): 0=正正正, 1=正正反, 2=正反反, 3=反反反
+            *all_outcome_indices: All 6 outcome indices (in visual order: line1, line2, ..., line6)
+        
+        Returns:
+            Updates for the selected outcome state, hexagram code, changing states, and button highlights
+        """
+        # Convert to list for mutation
+        outcome_list = list(all_outcome_indices)
+        
+        # Update the selected outcome for this line
+        outcome_list[visual_line_index] = outcome_idx
+        
+        # Update hexagram code and changing states
+        hexagram_code, *changing_states = update_coin_toss_display(*outcome_list)
+        
+        # Update button highlights - selected button should be highlighted with color (red for yang, green for yin)
+        button_updates = []
+        for vis_idx in range(6):
+            current_outcome = outcome_list[vis_idx]
+            is_yang = outcome_is_yang(current_outcome)
+            for out_idx in range(4):
+                if out_idx == current_outcome:
+                    # Selected button: red for yang, green for yin
+                    if is_yang:
+                        button_classes = ["coin-outcome-button", "coin-outcome-selected", "coin-yang"]
+                    else:
+                        button_classes = ["coin-outcome-button", "coin-outcome-selected", "coin-yin"]
+                else:
+                    button_classes = ["coin-outcome-button"]
+                # Use gr.update with elem_classes
+                button_updates.append(gr.update(elem_classes=button_classes))
+        
+        # Return: new outcome state, hexagram code, 6 changing states, 24 button updates (6 lines × 4 buttons)
+        return [outcome_idx] + [hexagram_code] + list(changing_states) + button_updates
+    
+    # Setup handlers function
+    def setup_handlers():
+        # Wire up outcome button clicks
+        # Note: visual_line_index 0 = line 1, visual_line_index 5 = line 6 (reversed order)
+        for visual_line_index in range(6):
+            for outcome_idx in range(4):
+                outcome_btn = outcome_buttons[visual_line_index][outcome_idx]
+                outcome_state_var = selected_outcome_states[visual_line_index]
+                
+                def make_outcome_handler(vis_idx, out_idx):
+                    def handler(*all_outcome_indices):
+                        return handle_outcome_click(vis_idx, out_idx, *all_outcome_indices)
+                    return handler
+                
+                handler = make_outcome_handler(visual_line_index, outcome_idx)
+                outcome_btn.click(
+                    fn=handler,
+                    inputs=selected_outcome_states,
+                    outputs=[
+                        selected_outcome_states[visual_line_index],  # Updated outcome state
+                        coin_toss_hexagram_code_state,
+                        *coin_toss_changing_state_vars,
+                        *[btn for line_btns in outcome_buttons for btn in line_btns]
+                    ]
+                )
+    
+    # Calculate button with compact view checkbox
+    gr.Markdown("---", elem_classes=["section-divider"])
+    with gr.Row():
+        calculate_btn = gr.Button("開始排盤", variant="primary", size="lg", scale=4)
+        compact_view_checkbox = gr.Checkbox(
+            label="簡潔模式",
+            value=False,
+            scale=1,
+            min_width=80
+        )
+    
+    coin_toss_inputs = CoinTossHexagramInputs(
+        coin_toss_hexagram_code_state=coin_toss_hexagram_code_state,
+        coin_toss_changing_state_vars=coin_toss_changing_state_vars,
+        outcome_buttons=outcome_buttons,
+        selected_outcome_states=selected_outcome_states,
+        calculate_btn=calculate_btn,
+        compact_view_checkbox=compact_view_checkbox
+    )
+    
+    return coin_toss_inputs, setup_handlers
+
+
 def create_hexagram_inputs() -> HexagramInputComponents:
     """
-    Create all hexagram input components (name search and clickable tabs)
+    Create all hexagram input components (name search, clickable, and coin toss tabs)
     
     Returns:
         HexagramInputComponents containing all hexagram input components
@@ -708,10 +979,16 @@ def create_hexagram_inputs() -> HexagramInputComponents:
         with gr.Tab("逐爻起卦"):
             clickable, setup_clickable_handlers = create_clickable_tab()
             setup_clickable_handlers()
+        
+        # Coin Toss Tab
+        with gr.Tab("新手擲幣"):
+            coin_toss, setup_coin_toss_handlers = create_coin_toss_tab()
+            setup_coin_toss_handlers()
     
     return HexagramInputComponents(
         name_search=name_search,
         clickable=clickable,
+        coin_toss=coin_toss,
         hexagram_tabs=hexagram_tabs
     )
 

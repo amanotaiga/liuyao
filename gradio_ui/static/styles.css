@@ -1301,3 +1301,112 @@ h3 {
         gap: 3px !important;
     }
 }
+
+/* Coin Toss Tab Styling */
+.coin-outcome-row {
+    gap: 2px !important;
+}
+
+.coin-outcome-button {
+    min-width: 50px;
+    max-width: 70px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+    padding: 10px 6px;
+    font-size: 13px;
+    background: #f8f9fa !important;
+    color: #495057 !important;
+    border: 2px solid #dee2e6 !important;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 1px;
+}
+
+.coin-outcome-button:hover {
+    background: #e9ecef !important;
+    border-color: #adb5bd !important;
+    transform: translateY(-1px);
+}
+
+/* Yang (red) selected buttons - use multiple selectors for robustness */
+button.coin-outcome-button.coin-outcome-selected.coin-yang,
+.coin-outcome-button.coin-outcome-selected.coin-yang,
+button.coin-yang.coin-outcome-selected {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: #ffffff !important;
+    border: 2px solid #b91c1c !important;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4) !important;
+    font-weight: 700 !important;
+}
+
+button.coin-outcome-button.coin-outcome-selected.coin-yang:hover,
+.coin-outcome-button.coin-outcome-selected.coin-yang:hover,
+button.coin-yang.coin-outcome-selected:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Yin (green) selected buttons - use multiple selectors for robustness */
+button.coin-outcome-button.coin-outcome-selected.coin-yin,
+.coin-outcome-button.coin-outcome-selected.coin-yin,
+button.coin-yin.coin-outcome-selected {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    color: #ffffff !important;
+    border: 2px solid #15803d !important;
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4) !important;
+    font-weight: 700 !important;
+}
+
+button.coin-outcome-button.coin-outcome-selected.coin-yin:hover,
+.coin-outcome-button.coin-outcome-selected.coin-yin:hover,
+button.coin-yin.coin-outcome-selected:hover {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.5) !important;
+}
+
+.coin-toss-line {
+    margin-bottom: 10px;
+    align-items: right;
+    justify-content: right;
+    gap: 0px !important;
+}
+
+.coin-line-label {
+    display: flex;
+    align-items: left;
+    justify-content: left;
+    text-align: center;
+}
+
+.coin-line-label *,
+.coin-line-label p,
+.coin-line-label markdown {
+    text-align: center !important;
+    margin: 0 auto !important;
+    width: 100%;
+    display: block;
+}
+
+.coin-outcome-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .coin-outcome-button {
+        min-width: 45px;
+        max-width: 60px;
+        padding: 8px 6px;
+        font-size: 11px;
+        height: 36px;
+        margin: 0 1px;
+    }
+    
+    .coin-outcome-row {
+        gap: 2px !important;
+    }
+}
