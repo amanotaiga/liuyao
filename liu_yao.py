@@ -280,12 +280,26 @@ def check_san_he_ju(liu_yao: List['YaoDetails'], bazi: BaZi) -> Optional[str]:
                 changed_branch = yao.changed_pillar.branch()
                 if changed_branch in branches:
                     # 变爻必须对應的本爻是動爻
+                    # 如果该地支已经在branch_sources中，检查是否来自同一爻的本卦爻
+                    # 如果是同一爻，则变爻优先（因为变爻代表变化后的状态）
+                    # 如果不是同一爻或不在branch_sources中，则添加变爻
                     if changed_branch not in branch_sources:
                         branch_sources[changed_branch] = {
                             "source": "变爻",
                             "is_changing": True,
                             "yao_index": i
                         }
+                    else:
+                        # 该地支已经在branch_sources中，检查是否来自同一爻
+                        existing_source = branch_sources[changed_branch]
+                        if existing_source["source"] == "本卦爻" and existing_source["yao_index"] == i:
+                            # 同一爻的本卦爻和变爻，变爻优先（因为变爻是变化后的状态）
+                            branch_sources[changed_branch] = {
+                                "source": "变爻",
+                                "is_changing": True,
+                                "yao_index": i
+                            }
+                        # 如果来自不同爻，保持原有来源（本卦爻优先于变爻）
         
         # 檢查日
         if day_branch in branches:

@@ -202,6 +202,10 @@ def _format_result_header(
     
     output_parts.append(hexagram_str + "\n\n")
     
+    # Display 三合局 if exists
+    if 'san_he_ju' in result_json and result_json['san_he_ju']:
+        output_parts.append(f"三合局: {result_json['san_he_ju']}\n\n")
+    
     # Extract and display 羊刃 and 桃花 from shen_sa
     if 'shen_sa' in result_json and show_shen_sha:
         # Capture output from display_shen_sha_definitions
