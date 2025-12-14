@@ -138,10 +138,23 @@ def search_hexagram_by_trigrams(outer_element: str, inner_element: str) -> List[
         return []
     
     matches = []
+    seen_codes = set()  # Track codes to avoid duplicates
+    
     for code, info in HEXAGRAM_MAP.items():
         # Try exact match first (outer=outer, inner=inner)
         if info.outer_hexagram == outer_trigram and info.inner_hexagram == inner_trigram:
-            matches.append((code, info.name))
+            if code not in seen_codes:
+                matches.append((code, info.name))
+                seen_codes.add(code)
+    
+    # If no exact matches, try swapped order (outer=inner, inner=outer)
+    # This handles cases where user selects trigrams in different order than hexagram structure
+    if not matches:
+        for code, info in HEXAGRAM_MAP.items():
+            if info.outer_hexagram == inner_trigram and info.inner_hexagram == outer_trigram:
+                if code not in seen_codes:
+                    matches.append((code, info.name))
+                    seen_codes.add(code)
     
     return matches
 

@@ -211,22 +211,26 @@ def create_western_calendar_tab(active_tab_state: gr.State) -> Tuple[WesternDate
         year_dropdown.change(
             fn=sync_from_numbers,
             inputs=[year_dropdown, month_dropdown, day_dropdown, hour_dropdown],
-            outputs=[mobile_date_time_html]
+            outputs=[mobile_date_time_html],
+            queue=False  # Immediate UI feedback
         )
         month_dropdown.change(
             fn=sync_from_numbers,
             inputs=[year_dropdown, month_dropdown, day_dropdown, hour_dropdown],
-            outputs=[mobile_date_time_html]
+            outputs=[mobile_date_time_html],
+            queue=False  # Immediate UI feedback
         )
         day_dropdown.change(
             fn=sync_from_numbers,
             inputs=[year_dropdown, month_dropdown, day_dropdown, hour_dropdown],
-            outputs=[mobile_date_time_html]
+            outputs=[mobile_date_time_html],
+            queue=False  # Immediate UI feedback
         )
         hour_dropdown.change(
             fn=sync_from_numbers,
             inputs=[year_dropdown, month_dropdown, day_dropdown, hour_dropdown],
-            outputs=[mobile_date_time_html]
+            outputs=[mobile_date_time_html],
+            queue=False  # Immediate UI feedback
         )
     
     western_inputs = WesternDateInputs(
@@ -455,7 +459,8 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
             btn.click(
                 fn=handler,
                 inputs=[pillar_index_state, current_stem_state, current_branch_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, active_tab_state],
-                outputs=[current_stem_state, current_branch_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, year_display, month_display, day_display, hour_display, active_tab_state]
+                outputs=[current_stem_state, current_branch_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, year_display, month_display, day_display, hour_display, active_tab_state],
+                queue=False  # Immediate UI feedback
             )
         
         # Wire up 地支 buttons
@@ -471,7 +476,8 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
             btn.click(
                 fn=handler,
                 inputs=[pillar_index_state, current_stem_state, current_branch_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, active_tab_state],
-                outputs=[current_stem_state, current_branch_state, pillar_index_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, year_display, month_display, day_display, hour_display, active_tab_state]
+                outputs=[current_stem_state, current_branch_state, pillar_index_state, year_pillar_state, month_pillar_state, day_pillar_state, hour_pillar_state, year_display, month_display, day_display, hour_display, active_tab_state],
+                queue=False  # Immediate UI feedback
             )
         
         # Wire up reset button
@@ -502,25 +508,29 @@ def create_ganzhi_calendar_tab(active_tab_state: gr.State) -> Tuple[GanzhiDateIn
         year_display.change(
             fn=handle_year_display_change,
             inputs=[year_display, active_tab_state],
-            outputs=[year_pillar_state, active_tab_state]
+            outputs=[year_pillar_state, active_tab_state],
+            queue=False  # Immediate UI feedback
         )
         
         month_display.change(
             fn=handle_month_display_change,
             inputs=[month_display, active_tab_state],
-            outputs=[month_pillar_state, active_tab_state]
+            outputs=[month_pillar_state, active_tab_state],
+            queue=False  # Immediate UI feedback
         )
         
         day_display.change(
             fn=handle_day_display_change,
             inputs=[day_display, active_tab_state],
-            outputs=[day_pillar_state, active_tab_state]
+            outputs=[day_pillar_state, active_tab_state],
+            queue=False  # Immediate UI feedback
         )
         
         hour_display.change(
             fn=handle_hour_display_change,
             inputs=[hour_display, active_tab_state],
-            outputs=[hour_pillar_state, active_tab_state]
+            outputs=[hour_pillar_state, active_tab_state],
+            queue=False  # Immediate UI feedback
         )
     
     ganzhi_inputs = GanzhiDateInputs(

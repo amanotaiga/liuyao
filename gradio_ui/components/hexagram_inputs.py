@@ -327,14 +327,16 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
                     inner_element_state,
                     hexagram_dropdown,
                     selected_hexagram_code_state
-                ] + changing_checkboxes + hexagram_line_containers + changed_hexagram_line_containers
+                ] + changing_checkboxes + hexagram_line_containers + changed_hexagram_line_containers,
+                queue=False  # Immediate UI feedback
             )
         
         # Update lines when dropdown changes
         hexagram_dropdown.change(
             fn=on_dropdown_select,
             inputs=[hexagram_dropdown] + changing_checkboxes,
-            outputs=[selected_hexagram_code_state] + hexagram_line_containers + changed_hexagram_line_containers
+            outputs=[selected_hexagram_code_state] + hexagram_line_containers + changed_hexagram_line_containers,
+            queue=False  # Immediate UI feedback
         )
         
         # Update lines when changing checkboxes change
@@ -342,7 +344,8 @@ def create_name_search_tab() -> Tuple[NameSearchHexagramInputs, Callable]:
             checkbox.change(
                 fn=update_lines_with_changing,
                 inputs=[selected_hexagram_code_state] + changing_checkboxes,
-                outputs=hexagram_line_containers + changed_hexagram_line_containers
+                outputs=hexagram_line_containers + changed_hexagram_line_containers,
+                queue=False  # Immediate UI feedback
             )
     
     # Calculate button with compact view checkbox
@@ -657,7 +660,8 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
             checkbox.change(
                 fn=handler,
                 inputs=[checkbox],
-                outputs=[state_var]
+                outputs=[state_var],
+                queue=False  # Immediate UI feedback
             )
         
         # Wire all checkboxes to update display
@@ -676,7 +680,8 @@ def create_clickable_tab() -> Tuple[ClickableHexagramInputs, Callable]:
                     clickable_changing_checkboxes[1],  # 5爻
                     clickable_changing_checkboxes[0],  # 6爻
                 ],
-                outputs=[btn for _, btn in clickable_line_buttons] + clickable_changed_hexagram_line_containers
+                outputs=[btn for _, btn in clickable_line_buttons] + clickable_changed_hexagram_line_containers,
+                queue=False  # Immediate UI feedback
             )
     
     # Calculate button with compact view checkbox
@@ -893,22 +898,31 @@ def create_coin_toss_tab() -> Tuple[CoinTossHexagramInputs, Callable]:
         # Update hexagram code and changing states
         hexagram_code, *changing_states = update_coin_toss_display(*outcome_list)
         
-        # Update button highlights - selected button should be highlighted with color (red for yang, green for yin)
+        # Update button highlights - only compute updates for the clicked line's 4 buttons
+        # Get the current outcome for this line to determine yang/yin
+        current_outcome = outcome_list[visual_line_index]
+        is_yang = outcome_is_yang(current_outcome)
+        
+        # Create updates for all 24 buttons
+        # For the clicked line, compute actual button classes
+        # For other lines, use gr.update() to keep current state (Gradio will skip these efficiently)
         button_updates = []
         for vis_idx in range(6):
-            current_outcome = outcome_list[vis_idx]
-            is_yang = outcome_is_yang(current_outcome)
             for out_idx in range(4):
-                if out_idx == current_outcome:
-                    # Selected button: red for yang, green for yin
-                    if is_yang:
-                        button_classes = ["coin-outcome-button", "coin-outcome-selected", "coin-yang"]
+                if vis_idx == visual_line_index:
+                    # For the clicked line, update all 4 buttons with proper classes
+                    if out_idx == current_outcome:
+                        # Selected button: red for yang, green for yin
+                        if is_yang:
+                            button_classes = ["coin-outcome-button", "coin-outcome-selected", "coin-yang"]
+                        else:
+                            button_classes = ["coin-outcome-button", "coin-outcome-selected", "coin-yin"]
                     else:
-                        button_classes = ["coin-outcome-button", "coin-outcome-selected", "coin-yin"]
+                        button_classes = ["coin-outcome-button"]
+                    button_updates.append(gr.update(elem_classes=button_classes))
                 else:
-                    button_classes = ["coin-outcome-button"]
-                # Use gr.update with elem_classes
-                button_updates.append(gr.update(elem_classes=button_classes))
+                    # For other lines, use gr.update() to keep current state (no change)
+                    button_updates.append(gr.update())
         
         # Return: new outcome state, hexagram code, 6 changing states, 24 button updates (6 lines × 4 buttons)
         return [outcome_idx] + [hexagram_code] + list(changing_states) + button_updates
@@ -936,7 +950,8 @@ def create_coin_toss_tab() -> Tuple[CoinTossHexagramInputs, Callable]:
                         coin_toss_hexagram_code_state,
                         *coin_toss_changing_state_vars,
                         *[btn for line_btns in outcome_buttons for btn in line_btns]
-                    ]
+                    ],
+                    queue=False  # Immediate UI feedback
                 )
     
     # Calculate button with compact view checkbox

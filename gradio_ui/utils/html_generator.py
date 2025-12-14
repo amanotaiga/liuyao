@@ -5,6 +5,7 @@ Functions for generating HTML representations of hexagrams,
 lines, and related UI elements.
 """
 
+from functools import lru_cache
 from typing import List, Dict
 from ..config import COLOR_CONFIG, UI_CONFIG
 
@@ -45,6 +46,7 @@ def get_line_style(is_yang: bool, is_changing: bool) -> Dict[str, str]:
     }
 
 
+@lru_cache(maxsize=500)
 def create_line_html(code: str, line_num: int, is_changing: bool, clickable: bool = False) -> str:
     """
     Create HTML for a hexagram line (unified function for both regular and clickable)
@@ -86,6 +88,7 @@ def create_line_html(code: str, line_num: int, is_changing: bool, clickable: boo
     """
 
 
+@lru_cache(maxsize=500)
 def create_changed_line_html(changed_code: str, line_num: int) -> str:
     """
     Create HTML for a changed hexagram line (no changing marks, always static)
