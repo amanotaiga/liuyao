@@ -1239,6 +1239,15 @@ def six_yao_divination(main_hexagram_code: str, bazi: BaZi, changing_line_indice
             # 檢查月破
             if yao_branch in yue_peng_branches:
                 yao.yue_peng = True
+                # 特殊规则：当丑未相冲（都是土）或辰戌相冲（都是土）时（月破），只有月破而没有月扶
+                # 如果旺衰是"月扶"，应该覆盖为"囚"（月破时无月扶）
+                if yao.wang_shuai == "月扶":
+                    # 只适用于丑未相冲和辰戌相冲（都是土的情况）
+                    if (month_branch == "丑" and yao_branch == "未") or \
+                       (month_branch == "未" and yao_branch == "丑") or \
+                       (month_branch == "辰" and yao_branch == "戌") or \
+                       (month_branch == "戌" and yao_branch == "辰"):
+                        yao.wang_shuai = ""
             
             # 檢查日沖
             if yao_branch in ri_chong_branches:
