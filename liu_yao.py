@@ -368,6 +368,20 @@ class YaoDetails:
     hidden_relative: str = ""
     hidden_element: str = ""
     
+    # 伏神神煞标记（用于伏神的日月關係）
+    hidden_wang_shuai: str = ""  # 伏神旺衰状态（"臨月"、"月扶"、"月生"等）
+    hidden_xun_kong: bool = False  # 伏神旬空
+    hidden_yue_peng: bool = False  # 伏神月破
+    hidden_ri_peng: bool = False  # 伏神日破
+    hidden_ri_chong: bool = False  # 伏神日沖
+    hidden_yue_he: Optional[str] = None  # 伏神月合类型（"生合"、"克合"、"平合"）
+    hidden_ri_he: Optional[str] = None  # 伏神日合类型（"生合"、"克合"、"平合"）
+    hidden_lin_ri: bool = False  # 伏神臨日
+    hidden_ri_fu: bool = False  # 伏神日扶
+    hidden_ri_sheng: bool = False  # 伏神日生
+    hidden_ri_ke: bool = False  # 伏神日克
+    hidden_an_dong: bool = False  # 伏神暗動
+    
     # 变爻/變卦信息
     is_changing: bool = False
     changed_pillar: Optional[Pillar] = None
@@ -396,6 +410,7 @@ class YaoDetails:
     shen_sha_markers: List[str] = field(default_factory=list)  # 其他神煞标记（如：禄、刃、桃花等）
     
     # 變卦神煞标记（用于動爻變卦的日月關係）
+    changed_wang_shuai: str = ""  # 變卦旺衰状态（"臨月"、"月扶"、"月生"等）
     changed_xun_kong: bool = False  # 變卦旬空
     changed_yue_peng: bool = False  # 變卦月破
     changed_ri_peng: bool = False  # 變卦日破
@@ -1329,6 +1344,9 @@ def six_yao_divination(main_hexagram_code: str, bazi: BaZi, changing_line_indice
             changed_branch = yao.changed_pillar.branch()
             changed_element = yao.changed_element
             
+            # 計算變卦旺衰狀態（包括臨月、月扶等）
+            yao.changed_wang_shuai = getWangShuai(changed_element, month_branch, changed_branch)
+            
             # 標記變卦旬空
             if changed_branch in xun_kong_branches:
                 yao.changed_xun_kong = True
@@ -1346,6 +1364,15 @@ def six_yao_divination(main_hexagram_code: str, bazi: BaZi, changing_line_indice
             # 檢查變卦月破
             if changed_branch in yue_peng_branches:
                 yao.changed_yue_peng = True
+                # 特殊规则：当丑未相冲（都是土）或辰戌相冲（都是土）时（月破），只有月破而没有月扶
+                # 如果旺衰是"月扶"，应该覆盖为"囚"（月破时无月扶）
+                if yao.changed_wang_shuai == "月扶":
+                    # 只适用于丑未相冲和辰戌相冲（都是土的情况）
+                    if (month_branch == "丑" and changed_branch == "未") or \
+                       (month_branch == "未" and changed_branch == "丑") or \
+                       (month_branch == "辰" and changed_branch == "戌") or \
+                       (month_branch == "戌" and changed_branch == "辰"):
+                        yao.changed_wang_shuai = ""
             
             # 檢查變卦日沖
             if changed_branch in ri_chong_branches:
@@ -1375,6 +1402,79 @@ def six_yao_divination(main_hexagram_code: str, bazi: BaZi, changing_line_indice
                 # 但如果需要，可以基於變卦的旺衰狀態判斷
                 # 這裡暫時不計算，因為變卦都是動爻的結果
                 pass
+    
+    # ===== 第10.4步：為伏神計算日月關係 =====
+    # 只對有伏神的爻計算
+    for yao in liu_yao:
+        if yao.hidden_pillar is not None:
+            hidden_branch = yao.hidden_pillar.branch()
+            hidden_element = yao.hidden_element
+            
+            # 計算伏神旺衰狀態（包括臨月、月扶等）
+            yao.hidden_wang_shuai = getWangShuai(hidden_element, month_branch, hidden_branch)
+            
+            # 標記伏神旬空
+            if hidden_branch in xun_kong_branches:
+                yao.hidden_xun_kong = True
+            
+            # 計算伏神臨日和日扶
+            lin_ri, ri_fu = checkLinRiRiFu(hidden_branch, day_branch)
+            yao.hidden_lin_ri = lin_ri
+            yao.hidden_ri_fu = ri_fu
+            
+            # 計算伏神日生和日克
+            ri_sheng, ri_ke = checkRiShengRiKe(hidden_element, day_branch)
+            yao.hidden_ri_sheng = ri_sheng
+            yao.hidden_ri_ke = ri_ke
+            
+            # 檢查伏神月破
+            if hidden_branch in yue_peng_branches:
+                yao.hidden_yue_peng = True
+                # 特殊规则：当丑未相冲（都是土）或辰戌相冲（都是土）时（月破），只有月破而没有月扶
+                # 如果旺衰是"月扶"，应该覆盖为"囚"（月破时无月扶）
+                if yao.hidden_wang_shuai == "月扶":
+                    # 只适用于丑未相冲和辰戌相冲（都是土的情况）
+                    if (month_branch == "丑" and hidden_branch == "未") or \
+                       (month_branch == "未" and hidden_branch == "丑") or \
+                       (month_branch == "辰" and hidden_branch == "戌") or \
+                       (month_branch == "戌" and hidden_branch == "辰"):
+                        yao.hidden_wang_shuai = ""
+            
+            # 檢查伏神日沖
+            if hidden_branch in ri_chong_branches:
+                yao.hidden_ri_chong = True
+            
+            # 檢查伏神月合并判斷類型
+            if hidden_branch in yue_he_branches:
+                he_type = get_he_type(month_branch, hidden_branch, is_month=True)
+                if he_type:
+                    yao.hidden_yue_he = he_type
+            # 特殊情況：辰月->寅爻/卯爻、未月->巳爻/午爻也是月平合
+            elif month_branch == "辰" and hidden_branch in ["寅", "卯"]:
+                yao.hidden_yue_he = "平合"
+            elif month_branch == "未" and hidden_branch in ["巳", "午"]:
+                yao.hidden_yue_he = "平合"
+            
+            # 檢查伏神日合并判斷類型
+            if hidden_branch in ri_he_branches:
+                he_type = get_he_type(day_branch, hidden_branch, is_month=False)
+                if he_type:
+                    yao.hidden_ri_he = he_type
+            
+            # 判斷伏神暗動和日破（仅对静爻且日沖）
+            if yao.hidden_ri_chong:
+                # 判斷是否為月旺相
+                # 月旺相包括：月生、月生合、月平合、月扶、臨月
+                is_yue_wang_xiang = False
+                if yao.hidden_wang_shuai in ["月生", "月扶", "臨月"]:
+                    is_yue_wang_xiang = True
+                elif yao.hidden_yue_he in ["生合", "平合"]:
+                    is_yue_wang_xiang = True
+                
+                if is_yue_wang_xiang:
+                    yao.hidden_an_dong = True  # 暗動
+                else:
+                    yao.hidden_ri_peng = True  # 日破
     
     # ===== 第10.5步：檢查化進神/化退神和回頭生/回頭克（仅对動爻）=====
     # 这些信息将显示在變卦栏位，而不是神煞栏位
@@ -1556,7 +1656,73 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
                 hidden_element = yao.hidden_element if yao.hidden_element else ""
                 hidden_relative = yao.hidden_relative if yao.hidden_relative else ""
                 if hidden_relative and hidden_pillar_str and hidden_element:
-                    hidden_str = f"({hidden_relative}{hidden_pillar_str}{hidden_element})"
+                    # 构建伏神的旺衰和日月关系标记
+                    hidden_marker_parts = []
+                    # 旺衰狀態（需考慮月破和月合的特殊情況）
+                    if yao.hidden_wang_shuai and yao.hidden_wang_shuai.strip():
+                        if yao.hidden_yue_peng:
+                            # 月破時，只顯示非"休"、"囚"、"月生"、"月克"的旺衰狀態
+                            if yao.hidden_wang_shuai not in ["休", "囚", "月生", "月克"]:
+                                hidden_marker_parts.append(yao.hidden_wang_shuai)
+                        elif yao.hidden_yue_he:
+                            # 月合時，只顯示非"休"、"囚"、"月生"、"月克"的旺衰狀態
+                            if yao.hidden_wang_shuai not in ["休", "囚", "月生", "月克"]:
+                                hidden_marker_parts.append(yao.hidden_wang_shuai)
+                        else:
+                            # 正常情況，顯示所有旺衰狀態
+                            hidden_marker_parts.append(yao.hidden_wang_shuai)
+                    # 月破（最高優先級）
+                    if yao.hidden_yue_peng:
+                        hidden_marker_parts.append("月破")
+                    # 旬空（獨立標記）
+                    if yao.hidden_xun_kong:
+                        hidden_marker_parts.append("旬空")
+                    # 日沖系列（優先於日扶、日克）
+                    if yao.hidden_ri_chong:
+                        if yao.hidden_an_dong:
+                            hidden_marker_parts.append("暗動")
+                        elif yao.hidden_ri_peng:
+                            hidden_marker_parts.append("日破")
+                        else:
+                            hidden_marker_parts.append("日沖")
+                    # 月合系列（獨立標記）
+                    if yao.hidden_yue_he:
+                        if yao.hidden_yue_he == "生合":
+                            hidden_marker_parts.append("月生合")
+                        elif yao.hidden_yue_he == "克合":
+                            hidden_marker_parts.append("月克合")
+                        elif yao.hidden_yue_he == "平合":
+                            hidden_marker_parts.append("月平合")
+                        else:
+                            hidden_marker_parts.append("月合")
+                    # 日合系列（優先於日生、日克）
+                    if yao.hidden_ri_he:
+                        if yao.hidden_ri_he == "生合":
+                            hidden_marker_parts.append("日生合")
+                        elif yao.hidden_ri_he == "克合":
+                            hidden_marker_parts.append("日克合")
+                        elif yao.hidden_ri_he == "平合":
+                            hidden_marker_parts.append("日平合")
+                        else:
+                            hidden_marker_parts.append("日合")
+                    # 臨日（獨立標記）
+                    if yao.hidden_lin_ri:
+                        hidden_marker_parts.append("臨日")
+                    # 日扶（需排除日沖：日沖優先）
+                    if yao.hidden_ri_fu and not yao.hidden_ri_chong:
+                        hidden_marker_parts.append("日扶")
+                    # 日生（需排除日生合：日生合優先）
+                    if yao.hidden_ri_sheng and yao.hidden_ri_he != "生合":
+                        hidden_marker_parts.append("日生")
+                    # 日克（需排除日克合和日沖：日克合優先，日沖優先）
+                    if yao.hidden_ri_ke and yao.hidden_ri_he != "克合" and not yao.hidden_ri_chong:
+                        hidden_marker_parts.append("日克")
+                    
+                    # 构建完整的伏神字符串
+                    if hidden_marker_parts:
+                        hidden_str = f"({hidden_relative}{hidden_pillar_str}{hidden_element}[{('/'.join(hidden_marker_parts))}])"
+                    else:
+                        hidden_str = f"({hidden_relative}{hidden_pillar_str}{hidden_element})"
         hidden_cols.append(hidden_str)
         
         # Main Hexagram (本卦)
@@ -1695,6 +1861,7 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
             
             # Add 變卦的日月關係 (only for changing lines)
             # 標記優先順序說明：
+            # 0. 旺衰狀態（臨月、月扶、月生等）- 需考慮月破和月合的特殊情況
             # 1. 月破 - 最高優先級（月建沖破）
             # 2. 旬空 - 獨立標記，不與其他衝突
             # 3. 日沖系列（暗動/日破/日沖）- 優先於日扶、日克
@@ -1705,6 +1872,19 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
             # 8. 日生 - 需排除日生合（日生合優先）
             # 9. 日克 - 需排除日克合和日沖（日克合優先，日沖優先）
             if yao.is_changing:
+                # 0. 旺衰狀態（需考慮月破和月合的特殊情況）
+                if yao.changed_wang_shuai and yao.changed_wang_shuai.strip():
+                    if yao.changed_yue_peng:
+                        # 月破時，只顯示非"休"、"囚"、"月生"、"月克"的旺衰狀態
+                        if yao.changed_wang_shuai not in ["休", "囚", "月生", "月克"]:
+                            changed_marker_parts.append(yao.changed_wang_shuai)
+                    elif yao.changed_yue_he:
+                        # 月合時，只顯示非"休"、"囚"、"月生"、"月克"的旺衰狀態
+                        if yao.changed_wang_shuai not in ["休", "囚", "月生", "月克"]:
+                            changed_marker_parts.append(yao.changed_wang_shuai)
+                    else:
+                        # 正常情況，顯示所有旺衰狀態
+                        changed_marker_parts.append(yao.changed_wang_shuai)
                 # 1. 月破（最高優先級）
                 if yao.changed_yue_peng:
                     changed_marker_parts.append("月破")
@@ -2007,6 +2187,7 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
 
             # Add 變卦的日月關係 (only for changing lines)
             # 標記優先順序說明：
+            # 0. 旺衰狀態（臨月、月扶、月生等）- 需考慮月破和月合的特殊情況
             # 1. 月破 - 最高優先級（月建沖破）
             # 2. 旬空 - 獨立標記，不與其他衝突
             # 3. 日沖系列（暗動/日破/日沖）- 優先於日扶、日克
@@ -2017,6 +2198,19 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
             # 8. 日生 - 需排除日生合（日生合優先）
             # 9. 日克 - 需排除日克合和日沖（日克合優先，日沖優先）
             if yao.is_changing:
+                # 0. 旺衰狀態（需考慮月破和月合的特殊情況）
+                if yao.changed_wang_shuai and yao.changed_wang_shuai.strip():
+                    if yao.changed_yue_peng:
+                        # 月破時，只顯示非"休"、"囚"、"月生"、"月克"的旺衰狀態
+                        if yao.changed_wang_shuai not in ["休", "囚", "月生", "月克"]:
+                            changed_marker_parts.append(yao.changed_wang_shuai)
+                    elif yao.changed_yue_he:
+                        # 月合時，只顯示非"休"、"囚"、"月生"、"月克"的旺衰狀態
+                        if yao.changed_wang_shuai not in ["休", "囚", "月生", "月克"]:
+                            changed_marker_parts.append(yao.changed_wang_shuai)
+                    else:
+                        # 正常情況，顯示所有旺衰狀態
+                        changed_marker_parts.append(yao.changed_wang_shuai)
                 # 1. 月破（最高優先級）
                 if yao.changed_yue_peng:
                     changed_marker_parts.append("月破")
@@ -2093,7 +2287,73 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
                 hidden_element = yao.hidden_element if yao.hidden_element else ""
                 hidden_relative = yao.hidden_relative if yao.hidden_relative else ""
                 if hidden_relative and hidden_pillar_str and hidden_element:
-                    hidden_str = f"    ➔ 伏: {hidden_relative}{hidden_pillar_str}{hidden_element}"
+                    # 构建伏神的旺衰和日月关系标记
+                    hidden_marker_parts = []
+                    # 旺衰狀態（需考慮月破和月合的特殊情況）
+                    if yao.hidden_wang_shuai and yao.hidden_wang_shuai.strip():
+                        if yao.hidden_yue_peng:
+                            # 月破時，只顯示非"休"、"囚"、"月生"、"月克"的旺衰狀態
+                            if yao.hidden_wang_shuai not in ["休", "囚", "月生", "月克"]:
+                                hidden_marker_parts.append(yao.hidden_wang_shuai)
+                        elif yao.hidden_yue_he:
+                            # 月合時，只顯示非"休"、"囚"、"月生"、"月克"的旺衰狀態
+                            if yao.hidden_wang_shuai not in ["休", "囚", "月生", "月克"]:
+                                hidden_marker_parts.append(yao.hidden_wang_shuai)
+                        else:
+                            # 正常情況，顯示所有旺衰狀態
+                            hidden_marker_parts.append(yao.hidden_wang_shuai)
+                    # 月破（最高優先級）
+                    if yao.hidden_yue_peng:
+                        hidden_marker_parts.append("月破")
+                    # 旬空（獨立標記）
+                    if yao.hidden_xun_kong:
+                        hidden_marker_parts.append("旬空")
+                    # 日沖系列（優先於日扶、日克）
+                    if yao.hidden_ri_chong:
+                        if yao.hidden_an_dong:
+                            hidden_marker_parts.append("暗動")
+                        elif yao.hidden_ri_peng:
+                            hidden_marker_parts.append("日破")
+                        else:
+                            hidden_marker_parts.append("日沖")
+                    # 月合系列（獨立標記）
+                    if yao.hidden_yue_he:
+                        if yao.hidden_yue_he == "生合":
+                            hidden_marker_parts.append("生合")
+                        elif yao.hidden_yue_he == "克合":
+                            hidden_marker_parts.append("克合")
+                        elif yao.hidden_yue_he == "平合":
+                            hidden_marker_parts.append("平合")
+                        else:
+                            hidden_marker_parts.append("合")
+                    # 日合系列（優先於日生、日克）
+                    if yao.hidden_ri_he:
+                        if yao.hidden_ri_he == "生合":
+                            hidden_marker_parts.append("生合")
+                        elif yao.hidden_ri_he == "克合":
+                            hidden_marker_parts.append("克合")
+                        elif yao.hidden_ri_he == "平合":
+                            hidden_marker_parts.append("平合")
+                        else:
+                            hidden_marker_parts.append("合")
+                    # 臨日（獨立標記）
+                    if yao.hidden_lin_ri:
+                        hidden_marker_parts.append("臨日")
+                    # 日扶（需排除日沖：日沖優先）
+                    if yao.hidden_ri_fu and not yao.hidden_ri_chong:
+                        hidden_marker_parts.append("日扶")
+                    # 日生（需排除日生合：日生合優先）
+                    if yao.hidden_ri_sheng and yao.hidden_ri_he != "生合":
+                        hidden_marker_parts.append("日生")
+                    # 日克（需排除日克合和日沖：日克合優先，日沖優先）
+                    if yao.hidden_ri_ke and yao.hidden_ri_he != "克合" and not yao.hidden_ri_chong:
+                        hidden_marker_parts.append("日克")
+                    
+                    # 构建完整的伏神字符串
+                    if hidden_marker_parts:
+                        hidden_str = f"    ➔ 伏: {hidden_relative}{hidden_pillar_str}{hidden_element}[{('/'.join(hidden_marker_parts))}]"
+                    else:
+                        hidden_str = f"    ➔ 伏: {hidden_relative}{hidden_pillar_str}{hidden_element}"
                     lines.append(hidden_str)
     
     return "\n".join(lines)
