@@ -1618,13 +1618,14 @@ def get_char_length_for_display_width(target_display_width: int) -> int:
     # The actual padding will be handled by pad_to_display_width
     return target_display_width
 
-def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = True, for_gradio: bool = False) -> str:
+def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = True, for_gradio: bool = False, show_tian_gan: bool = False) -> str:
     """格式化六爻排盤結果，輸出為PC友好格式（簡化版，更易讀）
     
     Args:
         yao_list: 六爻詳細信息列表（position 1-6，從下往上）
         show_shen_sha: 是否顯示神煞標記（默認True）
         for_gradio: 是否為Gradio界面顯示（默認False，終端顯示用6個字符，Gradio用5個字符）
+        show_tian_gan: 是否顯示天干（默認False，False時只顯示地支和五行）
     
     Returns:
         格式化後的字符串，使用簡化的表格格式
@@ -1663,7 +1664,7 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
         hidden_str = ""
         if not all_relatives_present:
             if yao.hidden_pillar is not None and yao.hidden_pillar.to_string():
-                hidden_pillar_str = yao.hidden_pillar.to_string()
+                hidden_pillar_str = yao.hidden_pillar.to_string() if show_tian_gan else yao.hidden_pillar.branch()
                 hidden_element = yao.hidden_element if yao.hidden_element else ""
                 hidden_relative = yao.hidden_relative if yao.hidden_relative else ""
                 if hidden_relative and hidden_pillar_str and hidden_element:
@@ -1747,7 +1748,7 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
         
         main_pillar_full = ""
         if yao.main_pillar is not None:
-            main_pillar_str = yao.main_pillar.to_string()
+            main_pillar_str = yao.main_pillar.to_string() if show_tian_gan else yao.main_pillar.branch()
             main_element = yao.main_element if yao.main_element else ""
             main_pillar_full = f"{main_pillar_str}{main_element}"
         
@@ -1845,7 +1846,7 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
         # Changed Hexagram (變卦)
         bian_gua_str = ""
         if yao.changed_pillar is not None:
-            changed_pillar_str = yao.changed_pillar.to_string()
+            changed_pillar_str = yao.changed_pillar.to_string() if show_tian_gan else yao.changed_pillar.branch()
             changed_element = yao.changed_element if yao.changed_element else ""
             changed_relative = yao.changed_relative if yao.changed_relative else ""
             
@@ -2010,13 +2011,14 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
     return "\n".join(lines)
 
 
-def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: bool = True, for_gradio: bool = False) -> str:
+def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: bool = True, for_gradio: bool = False, show_tian_gan: bool = False) -> str:
     """格式化六爻排盤結果，輸出為移動端友好格式（垂直緊湊版）
     
     Args:
         yao_list: 六爻詳細信息列表（position 1-6，從下往上）
         show_shen_sha: 是否顯示神煞標記（默認True）
         for_gradio: 是否為Gradio界面顯示（默認False，終端顯示用6個字符，Gradio用5個字符）
+        show_tian_gan: 是否顯示天干（默認False，False時只顯示地支和五行）
     
     Returns:
         格式化後的字符串，使用垂直緊湊格式，適合移動端顯示
@@ -2053,7 +2055,7 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
         
         main_pillar_full = ""
         if yao.main_pillar is not None:
-            main_pillar_str = yao.main_pillar.to_string()
+            main_pillar_str = yao.main_pillar.to_string() if show_tian_gan else yao.main_pillar.branch()
             main_element = yao.main_element if yao.main_element else ""
             main_pillar_full = f"{main_pillar_str}{main_element}"
         
@@ -2171,7 +2173,7 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
         
         # Changed Hexagram (變卦) - indented
         if yao.changed_pillar is not None:
-            changed_pillar_str = yao.changed_pillar.to_string()
+            changed_pillar_str = yao.changed_pillar.to_string() if show_tian_gan else yao.changed_pillar.branch()
             changed_element = yao.changed_element if yao.changed_element else ""
             changed_relative = yao.changed_relative if yao.changed_relative else ""
             
@@ -2294,7 +2296,7 @@ def format_liu_yao_display_mobile(yao_list: List[YaoDetails], show_shen_sha: boo
         # Hidden God (伏神) - indented, shown on separate line if present
         if not all_relatives_present:
             if yao.hidden_pillar is not None and yao.hidden_pillar.to_string():
-                hidden_pillar_str = yao.hidden_pillar.to_string()
+                hidden_pillar_str = yao.hidden_pillar.to_string() if show_tian_gan else yao.hidden_pillar.branch()
                 hidden_element = yao.hidden_element if yao.hidden_element else ""
                 hidden_relative = yao.hidden_relative if yao.hidden_relative else ""
                 if hidden_relative and hidden_pillar_str and hidden_element:

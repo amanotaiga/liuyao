@@ -234,7 +234,8 @@ def format_divination_results_pc(
     result_json: Dict[str, Any],
     yao_list: List[Any],
     show_shen_sha: bool = True,
-    for_gradio: bool = False
+    for_gradio: bool = False,
+    show_tian_gan: bool = False
 ) -> Tuple[str, str]:
     """Format divination results as a string in PC-friendly format.
     
@@ -247,6 +248,7 @@ def format_divination_results_pc(
         yao_list: List of YaoDetails from six_yao_divination
         show_shen_sha: Whether to show shen sha markers
         for_gradio: Whether this is for Gradio interface (uses 5 chars for yang) vs terminal (6 chars)
+        show_tian_gan: Whether to show heavenly stems (天干), default False. If False, only shows earthly branches and elements.
     
     Returns:
         Tuple of (formatted_result_with_prompt, formatted_result_without_prompt)
@@ -255,7 +257,7 @@ def format_divination_results_pc(
     output_parts = _format_result_header(bazi, result_json, show_shen_sha)
     
     # Main table using PC format
-    table_output = format_liu_yao_display_pc(yao_list, show_shen_sha=show_shen_sha, for_gradio=for_gradio) + "\n"
+    table_output = format_liu_yao_display_pc(yao_list, show_shen_sha=show_shen_sha, for_gradio=for_gradio, show_tian_gan=show_tian_gan) + "\n"
     output_parts.append(table_output)
     
     # Create version without prompt
@@ -274,7 +276,8 @@ def format_divination_results_mobile(
     result_json: Dict[str, Any],
     yao_list: List[Any],
     show_shen_sha: bool = True,
-    for_gradio: bool = False
+    for_gradio: bool = False,
+    show_tian_gan: bool = False
 ) -> Tuple[str, str]:
     """Format divination results as a string in mobile-friendly format.
     
@@ -287,6 +290,7 @@ def format_divination_results_mobile(
         yao_list: List of YaoDetails from six_yao_divination
         show_shen_sha: Whether to show shen sha markers
         for_gradio: Whether this is for Gradio interface (uses 5 chars for yang) vs terminal (6 chars)
+        show_tian_gan: Whether to show heavenly stems (天干), default False. If False, only shows earthly branches and elements.
     
     Returns:
         Tuple of (formatted_result_with_prompt, formatted_result_without_prompt)
@@ -295,7 +299,7 @@ def format_divination_results_mobile(
     output_parts = _format_result_header(bazi, result_json, show_shen_sha)
     
     # Main table using mobile format
-    table_output = format_liu_yao_display_mobile(yao_list, show_shen_sha=show_shen_sha, for_gradio=for_gradio) + "\n"
+    table_output = format_liu_yao_display_mobile(yao_list, show_shen_sha=show_shen_sha, for_gradio=for_gradio, show_tian_gan=show_tian_gan) + "\n"
     output_parts.append(table_output)
     
     # Create version without prompt
