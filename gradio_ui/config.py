@@ -5,11 +5,17 @@ Contains all constants, default values, and configuration settings
 used throughout the Gradio interface.
 """
 
+import os
 from typing import List, Dict
 from dataclasses import dataclass
 
 # Timezone configuration
 USE_JAPAN_TIME: bool = True  # Set to True to use Japan time (JST), False to use system time
+
+# Display configuration
+# Can be overridden by environment variable SHOW_TIAN_GAN (set to "true" or "1" to enable)
+_SHOW_TIAN_GAN_ENV = os.getenv("SHOW_TIAN_GAN", "").lower()
+SHOW_TIAN_GAN: bool = _SHOW_TIAN_GAN_ENV in ("true", "1", "yes") if _SHOW_TIAN_GAN_ENV else False  # Default: False
 
 
 # Gan-Zhi (干支) constants

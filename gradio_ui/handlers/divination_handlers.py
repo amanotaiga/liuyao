@@ -11,7 +11,7 @@ from ba_zi_base import BaZi, Pillar
 from liu_yao import six_yao_divination, HEXAGRAM_MAP
 from liu_yao import bazi_from_date_string
 
-from ..config import ERROR_MESSAGES, DEFAULT_HEXAGRAM_CODE
+from ..config import ERROR_MESSAGES, DEFAULT_HEXAGRAM_CODE, SHOW_TIAN_GAN
 from ..utils.validation import (
     validate_date,
     validate_ganzhi,
@@ -319,7 +319,8 @@ def perform_divination(hexagram_code: str, bazi: BaZi, changing_lines: List[int]
             result_json,
             yao_list,
             show_shen_sha=True,
-            for_gradio=True
+            for_gradio=True,
+            show_tian_gan=SHOW_TIAN_GAN
         )
     else:
         formatted_result_with_prompt, formatted_result_without_prompt = format_divination_results_pc(
@@ -327,7 +328,8 @@ def perform_divination(hexagram_code: str, bazi: BaZi, changing_lines: List[int]
             result_json,
             yao_list,
             show_shen_sha=True,
-            for_gradio=True
+            for_gradio=True,
+            show_tian_gan=SHOW_TIAN_GAN
         )
     
     return formatted_result_with_prompt, formatted_result_without_prompt, result_json, yao_list, None
