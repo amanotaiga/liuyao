@@ -222,7 +222,7 @@ def get_he_type(month_or_day_branch: str, yao_branch: str, is_month: bool = True
     return None
 
 
-def check_san_he_ju(liu_yao: List['YaoDetails'], bazi: BaZi) -> Optional[str]:
+def check_san_he_ju(liu_yao: List['YaoDetails'], bazi: BaZi) -> List[str]:
     """
     判断三合局
     
@@ -237,12 +237,14 @@ def check_san_he_ju(liu_yao: List['YaoDetails'], bazi: BaZi) -> Optional[str]:
     2. 静爻不参加
     3. 中神必须为動爻，如果是动之变爻的话，必须跟動爻一起参加
     
+    注意：可以同时成立多个三合局，例如同时成立"亥卯未"和"巳酉丑"三合局
+    
     Args:
         liu_yao: 六爻详细信息列表
         bazi: 八字對象
     
     Returns:
-        三合局字符串（如"巳酉丑三合局"），如果没有则返回 None
+        三合局字符串列表（如["巳酉丑三合局", "亥卯未三合局"]），如果没有则返回空列表 []
     """
     # 定义三合局组合及其中神
     san_he_ju_groups = [
@@ -254,6 +256,9 @@ def check_san_he_ju(liu_yao: List['YaoDetails'], bazi: BaZi) -> Optional[str]:
     
     day_branch = bazi.day.branch()
     month_branch = bazi.month.branch()
+    
+    # 存储所有满足条件的三合局
+    found_san_he_ju = []
     
     # 对每个三合局组合进行檢查
     for branches, zhong_shen in san_he_ju_groups:
@@ -347,10 +352,11 @@ def check_san_he_ju(liu_yao: List['YaoDetails'], bazi: BaZi) -> Optional[str]:
                     if not yao.is_changing:
                         continue
             
-            # 所有条件满足，返回三合局名称
-            return f"{branches[0]}{branches[1]}{branches[2]}三合局"
+            # 所有条件满足，添加到结果列表
+            san_he_ju_name = f"{branches[0]}{branches[1]}{branches[2]}三合局"
+            found_san_he_ju.append(san_he_ju_name)
     
-    return None
+    return found_san_he_ju
 
 
 @dataclass
@@ -1501,7 +1507,12 @@ def six_yao_divination(main_hexagram_code: str, bazi: BaZi, changing_line_indice
     # ===== 第10.6步：判断三合局（在所有信息计算完成后）=====
     san_he_ju_result = check_san_he_ju(liu_yao, bazi)
     if san_he_ju_result:
-        result_json["san_he_ju"] = san_he_ju_result
+        # 如果只有一个三合局，保持向后兼容性（返回字符串）
+        # 如果有多个三合局，返回列表
+        if len(san_he_ju_result) == 1:
+            result_json["san_he_ju"] = san_he_ju_result[0]
+        else:
+            result_json["san_he_ju"] = san_he_ju_result
     
     # ===== 第11步：输出排盘结果（调试模式）=====
     # 可以在这里添加调试输出
@@ -1643,7 +1654,7 @@ def format_liu_yao_display_pc(yao_list: List[YaoDetails], show_shen_sha: bool = 
         # Six Spirits (六獸) - format with space between characters
         spirit = ""
         if yao.spirit:
-            spirit = "  ".join(list(yao.spirit))
+            spirit = "".join(list(yao.spirit))
         else:
             spirit = "   "
         spirit_cols.append(spirit)

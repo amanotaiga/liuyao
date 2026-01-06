@@ -204,7 +204,13 @@ def _format_result_header(
     
     # Display 三合局 if exists
     if 'san_he_ju' in result_json and result_json['san_he_ju']:
-        output_parts.append(f"三合局: {result_json['san_he_ju']}\n\n")
+        san_he_ju = result_json['san_he_ju']
+        # 支持单个字符串或多个三合局的列表
+        if isinstance(san_he_ju, list):
+            san_he_ju_str = "、".join(san_he_ju)
+        else:
+            san_he_ju_str = san_he_ju
+        output_parts.append(f"三合局: {san_he_ju_str}\n\n")
     
     # Extract and display 羊刃 and 桃花 from shen_sa
     if 'shen_sa' in result_json and show_shen_sha:
