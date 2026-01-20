@@ -224,7 +224,7 @@ def get_he_type(month_or_day_branch: str, yao_branch: str, is_month: bool = True
 
 def check_san_he_ju(liu_yao: List['YaoDetails'], bazi: BaZi) -> List[str]:
     """
-    判断三合局
+    判断三合局（基于5种成局规则）
     
     三合局有四种：
     - 巳酉丑（中神：酉）
@@ -232,12 +232,14 @@ def check_san_he_ju(liu_yao: List['YaoDetails'], bazi: BaZi) -> List[str]:
     - 亥卯未（中神：卯）
     - 寅午戌（中神：午）
     
-    条件：
-    1. 必须是動爻(changing=True)，或是暗動(an_dong=True)，或是动之变爻(changed_pillar不为None且is_changing=True)，或是日、月
-    2. 静爻不参加
-    3. 中神必须为動爻，如果是动之变爻的话，必须跟動爻一起参加
+    5种成局规则：
+    ① SANHE-3MOVE: 三个动爻成局（含暗动）- 3个明动爻，或2个明动爻+1个暗动爻
+    ② SANHE-1-3: 初爻动 + 三爻动（含其变爻）- 通过虚图补足第三合位
+    ③ SANHE-4-6: 四爻 + 六爻动（含变爻组合）
+    ④ SANHE-MID-DM: 中神动于卦中 + 日月参与
+    ⑤ SANHE-MID-MULTI: 中神 + 卦中任一地支发动 + 日月地支组合
     
-    注意：可以同时成立多个三合局，例如同时成立"亥卯未"和"巳酉丑"三合局
+    注意：可以同时成立多个三合局
     
     Args:
         liu_yao: 六爻详细信息列表
@@ -260,99 +262,263 @@ def check_san_he_ju(liu_yao: List['YaoDetails'], bazi: BaZi) -> List[str]:
     # 存储所有满足条件的三合局
     found_san_he_ju = []
     
-    # 对每个三合局组合进行檢查
+    # Step 1: 收集所有有效节点
+    # 格式: {地支: [{"source": "本卦爻"/"变爻"/"日"/"月", "is_changing": bool, "is_an_dong": bool, "yao_index": int, "position": int}, ...]}
+    valid_nodes = {}
+    
+    # 收集本卦爻（明动爻和暗动爻）
+    for i, yao in enumerate(liu_yao):
+        if yao.main_pillar is not None:
+            main_branch = yao.main_pillar.branch()
+            if main_branch not in valid_nodes:
+                valid_nodes[main_branch] = []
+            if yao.is_changing:  # 明动爻
+                valid_nodes[main_branch].append({
+                    "source": "本卦爻",
+                    "is_changing": True,
+                    "is_an_dong": False,
+                    "yao_index": i,
+                    "position": yao.position
+                })
+            elif yao.an_dong:  # 暗动爻
+                valid_nodes[main_branch].append({
+                    "source": "本卦爻",
+                    "is_changing": False,
+                    "is_an_dong": True,
+                    "yao_index": i,
+                    "position": yao.position
+                })
+    
+    # 收集变爻（必须是动爻的变爻）
+    for i, yao in enumerate(liu_yao):
+        if yao.changed_pillar is not None and yao.is_changing:
+            changed_branch = yao.changed_pillar.branch()
+            if changed_branch not in valid_nodes:
+                valid_nodes[changed_branch] = []
+            valid_nodes[changed_branch].append({
+                "source": "变爻",
+                "is_changing": True,
+                "is_an_dong": False,
+                "yao_index": i,
+                "position": yao.position
+            })
+    
+    # 收集日支和月支
+    if day_branch not in valid_nodes:
+        valid_nodes[day_branch] = []
+    valid_nodes[day_branch].append({
+        "source": "日",
+        "is_changing": True,
+        "is_an_dong": False,
+        "yao_index": -1,
+        "position": -1
+    })
+    
+    if month_branch not in valid_nodes:
+        valid_nodes[month_branch] = []
+    valid_nodes[month_branch].append({
+        "source": "月",
+        "is_changing": True,
+        "is_an_dong": False,
+        "yao_index": -1,
+        "position": -1
+    })
+    
+    # Step 2: 对每个三合局组合尝试匹配5种规则
     for branches, zhong_shen in san_he_ju_groups:
-        # 记录每个地支的来源信息
-        # 格式: {地支: {"source": "本卦爻"/"变爻"/"日"/"月", "is_changing": bool, "yao_index": int}}
-        branch_sources = {}
+        branch1, branch2, branch3 = branches[0], branches[1], branches[2]
         
-        # 檢查本卦爻
-        for i, yao in enumerate(liu_yao):
-            if yao.main_pillar is not None:
-                main_branch = yao.main_pillar.branch()
-                if main_branch in branches:
-                    # 必须是動爻或暗動
-                    if yao.is_changing or yao.an_dong:
-                        if main_branch not in branch_sources:
-                            branch_sources[main_branch] = {
-                                "source": "本卦爻",
-                                "is_changing": yao.is_changing,
-                                "yao_index": i
-                            }
-        
-        # 檢查变爻
-        for i, yao in enumerate(liu_yao):
-            if yao.changed_pillar is not None and yao.is_changing:
-                changed_branch = yao.changed_pillar.branch()
-                if changed_branch in branches:
-                    # 变爻必须对應的本爻是動爻
-                    # 如果该地支已经在branch_sources中，检查是否来自同一爻的本卦爻
-                    # 如果是同一爻，则变爻优先（因为变爻代表变化后的状态）
-                    # 如果不是同一爻或不在branch_sources中，则添加变爻
-                    if changed_branch not in branch_sources:
-                        branch_sources[changed_branch] = {
-                            "source": "变爻",
-                            "is_changing": True,
-                            "yao_index": i
-                        }
-                    else:
-                        # 该地支已经在branch_sources中，检查是否来自同一爻
-                        existing_source = branch_sources[changed_branch]
-                        if existing_source["source"] == "本卦爻" and existing_source["yao_index"] == i:
-                            # 同一爻的本卦爻和变爻，变爻优先（因为变爻是变化后的状态）
-                            branch_sources[changed_branch] = {
-                                "source": "变爻",
-                                "is_changing": True,
-                                "yao_index": i
-                            }
-                        # 如果来自不同爻，保持原有来源（本卦爻优先于变爻）
-        
-        # 檢查日
-        if day_branch in branches:
-            branch_sources[day_branch] = {
-                "source": "日",
-                "is_changing": True,  # 日视为动
-                "yao_index": -1
-            }
-        
-        # 檢查月
-        if month_branch in branches:
-            branch_sources[month_branch] = {
-                "source": "月",
-                "is_changing": True,  # 月视为动
-                "yao_index": -1
-            }
-        
-        # 檢查三个地支是否都存在
-        if len(branch_sources) == 3:
-            # 檢查中神是否存在
-            zhong_shen_source = branch_sources.get(zhong_shen)
-            if zhong_shen_source is None:
-                continue
+        # 规则①: SANHE-3MOVE - 三个动爻成局（含暗动）
+        def check_rule_1():
+            """规则①: 三个动爻成局（含暗动）- 3个明动爻，或2个明动爻+1个暗动爻"""
+            ming_dong_branches = set()  # 有明动的地支
+            an_dong_branches = set()    # 有暗动的地支（且没有明动）
             
-            # 中神必须为動爻（is_changing=True）
-            # 注意：暗動(an_dong)不算動爻，所以中神不能只是暗動
-            if not zhong_shen_source["is_changing"]:
-                continue
+            for branch in branches:
+                if branch in valid_nodes:
+                    has_ming_dong = False
+                    has_an_dong = False
+                    
+                    for node in valid_nodes[branch]:
+                        # 只考虑本卦爻和变爻，不考虑日月
+                        if node["source"] in ["本卦爻", "变爻"]:
+                            if node["is_changing"]:
+                                has_ming_dong = True
+                                break
+                            elif node["is_an_dong"]:
+                                has_an_dong = True
+                    
+                    if has_ming_dong:
+                        ming_dong_branches.add(branch)
+                    elif has_an_dong:
+                        an_dong_branches.add(branch)
             
-            # 如果中神是变爻，檢查对應的本爻是否也是動爻
-            if zhong_shen_source["source"] == "变爻":
-                yao_index = zhong_shen_source["yao_index"]
-                if yao_index >= 0 and yao_index < len(liu_yao):
-                    yao = liu_yao[yao_index]
-                    if not yao.is_changing:
-                        continue
+            # 需要三个地支都参与
+            total_branches = len(ming_dong_branches) + len(an_dong_branches)
+            if total_branches == 3:
+                ming_dong_count = len(ming_dong_branches)
+                an_dong_count = len(an_dong_branches)
+                # 3个明动爻，或2个明动爻+1个暗动爻
+                if ming_dong_count == 3 or (ming_dong_count == 2 and an_dong_count == 1):
+                    return True
+            return False
+        
+        # 规则②: SANHE-1-3 - 初爻动 + 三爻动（含其变爻）
+        def check_rule_2():
+            """规则②: 初爻动 + 三爻动（含其变爻）- 通过虚图补足第三合位"""
+            chu_yao_branch = None
+            san_yao_branch = None
             
-            # 如果中神是本卦爻，确保它是動爻（不是暗動）
-            if zhong_shen_source["source"] == "本卦爻":
-                yao_index = zhong_shen_source["yao_index"]
-                if yao_index >= 0 and yao_index < len(liu_yao):
-                    yao = liu_yao[yao_index]
-                    # 中神必须是動爻，不能只是暗動
-                    if not yao.is_changing:
-                        continue
+            # 检查初爻（position=1）
+            for i, yao in enumerate(liu_yao):
+                if yao.position == 1:  # 初爻
+                    if yao.is_changing:
+                        # 优先使用变爻，如果没有变爻则使用本卦爻
+                        if yao.changed_pillar is not None:
+                            chu_yao_branch = yao.changed_pillar.branch()
+                        elif yao.main_pillar is not None:
+                            chu_yao_branch = yao.main_pillar.branch()
+                    break
             
-            # 所有条件满足，添加到结果列表
+            # 检查三爻（position=3）
+            for i, yao in enumerate(liu_yao):
+                if yao.position == 3:  # 三爻
+                    if yao.is_changing:
+                        # 优先使用变爻，如果没有变爻则使用本卦爻
+                        if yao.changed_pillar is not None:
+                            san_yao_branch = yao.changed_pillar.branch()
+                        elif yao.main_pillar is not None:
+                            san_yao_branch = yao.main_pillar.branch()
+                    break
+            
+            if chu_yao_branch and san_yao_branch:
+                # 检查这两个地支是否属于当前三合局
+                if chu_yao_branch in branches and san_yao_branch in branches:
+                    # 找到第三个地支
+                    third_branch = None
+                    for b in branches:
+                        if b != chu_yao_branch and b != san_yao_branch:
+                            third_branch = b
+                            break
+                    
+                    # 第三个地支可以通过虚图补足（检查是否有任何有效节点，包括日月）
+                    if third_branch and third_branch in valid_nodes:
+                        return True
+            return False
+        
+        # 规则③: SANHE-4-6 - 四爻 + 六爻动（含变爻组合）
+        def check_rule_3():
+            """规则③: 四爻 + 六爻动（含变爻组合）"""
+            si_yao_branch = None
+            liu_yao_branch = None
+            
+            # 检查四爻（position=4）
+            for i, yao in enumerate(liu_yao):
+                if yao.position == 4:  # 四爻
+                    if yao.is_changing:
+                        # 优先使用变爻，如果没有变爻则使用本卦爻
+                        if yao.changed_pillar is not None:
+                            si_yao_branch = yao.changed_pillar.branch()
+                        elif yao.main_pillar is not None:
+                            si_yao_branch = yao.main_pillar.branch()
+                    break
+            
+            # 检查六爻（position=6）
+            for i, yao in enumerate(liu_yao):
+                if yao.position == 6:  # 六爻
+                    if yao.is_changing:
+                        # 优先使用变爻，如果没有变爻则使用本卦爻
+                        if yao.changed_pillar is not None:
+                            liu_yao_branch = yao.changed_pillar.branch()
+                        elif yao.main_pillar is not None:
+                            liu_yao_branch = yao.main_pillar.branch()
+                    break
+            
+            if si_yao_branch and liu_yao_branch:
+                # 检查这两个地支是否属于当前三合局
+                if si_yao_branch in branches and liu_yao_branch in branches:
+                    # 找到第三个地支
+                    third_branch = None
+                    for b in branches:
+                        if b != si_yao_branch and b != liu_yao_branch:
+                            third_branch = b
+                            break
+                    
+                    # 第三个地支需要有有效节点（包括日月）
+                    if third_branch and third_branch in valid_nodes:
+                        return True
+            return False
+        
+        # 规则④: SANHE-MID-DM - 中神动于卦中 + 日月参与
+        def check_rule_4():
+            """规则④: 中神动于卦中 + 日月参与"""
+            # 检查中神是否在卦中且为动爻
+            zhong_shen_in_gua = False
+            if zhong_shen in valid_nodes:
+                for node in valid_nodes[zhong_shen]:
+                    if node["source"] in ["本卦爻", "变爻"] and node["is_changing"]:
+                        zhong_shen_in_gua = True
+                        break
+            
+            if not zhong_shen_in_gua:
+                return False
+            
+            # 检查日或月是否参与（补齐另外两个地支之一）
+            remaining_branches = [b for b in branches if b != zhong_shen]
+            
+            for branch in remaining_branches:
+                if branch in valid_nodes:
+                    for node in valid_nodes[branch]:
+                        if node["source"] in ["日", "月"]:
+                            # 检查第三个地支是否也有有效节点
+                            third_branch = [b for b in remaining_branches if b != branch][0]
+                            if third_branch in valid_nodes:
+                                return True
+                            break
+            
+            return False
+        
+        # 规则⑤: SANHE-MID-MULTI - 中神 + 卦中任一地支发动 + 日月地支组合
+        def check_rule_5():
+            """规则⑤: 中神 + 卦中任一地支发动 + 日月地支组合"""
+            # 检查中神是否发动（在卦中为动爻）
+            zhong_shen_moving = False
+            if zhong_shen in valid_nodes:
+                for node in valid_nodes[zhong_shen]:
+                    if node["source"] in ["本卦爻", "变爻"] and node["is_changing"]:
+                        zhong_shen_moving = True
+                        break
+            
+            if not zhong_shen_moving:
+                return False
+            
+            # 检查卦中是否有另一个地支发动
+            other_branch_in_gua = None
+            remaining_branches = [b for b in branches if b != zhong_shen]
+            
+            for branch in remaining_branches:
+                if branch in valid_nodes:
+                    for node in valid_nodes[branch]:
+                        if node["source"] in ["本卦爻", "变爻"] and node["is_changing"]:
+                            other_branch_in_gua = branch
+                            break
+                    if other_branch_in_gua:
+                        break
+            
+            if not other_branch_in_gua:
+                return False
+            
+            # 检查日或月是否提供第三个地支
+            third_branch = [b for b in remaining_branches if b != other_branch_in_gua][0]
+            if third_branch in valid_nodes:
+                for node in valid_nodes[third_branch]:
+                    if node["source"] in ["日", "月"]:
+                        return True
+            
+            return False
+        
+        # Step 3: 尝试匹配5种规则，任一规则成立即判定为三合局
+        if check_rule_1() or check_rule_2() or check_rule_3() or check_rule_4() or check_rule_5():
             san_he_ju_name = f"{branches[0]}{branches[1]}{branches[2]}三合局"
             found_san_he_ju.append(san_he_ju_name)
     
